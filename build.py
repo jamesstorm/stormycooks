@@ -1,13 +1,8 @@
 #!python3
-import json
-import shutil
 import os
-from jinja2 import Template, Environment, FileSystemLoader, select_autoescape
 import markdown
-import minify_html
 import frontmatter
 import re
-import json
 import StormyWordpress
 import WordPressSecrets
 import MarkdownSecrets
