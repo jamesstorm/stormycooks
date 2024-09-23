@@ -1,5 +1,6 @@
 import requests
 from requests.auth import HTTPBasicAuth
+import json
 
 POSTS_API_PATH="wp-json/wp/v2/posts"
 USERS_API_PATH="wp-json/wp/v2/users"
@@ -47,6 +48,12 @@ class StormyWordpressConnection:
             return StormyWordpressResponse(None, False, e) 
         
 
+def GetPosts(connection: StormyWordpressConnection):
+    url = "{}/{}".format(connection.site_url, POSTS_API_PATH)
+    response = requests.get(url, auth=HTTPBasicAuth(
+        connection.username, 
+        connection.password))
+    print(response.json())
 
 
 def PostExists(connection: StormyWordpressConnection, post_id):
@@ -59,15 +66,17 @@ def PostExists(connection: StormyWordpressConnection, post_id):
     return False
 
 
-def PostCreate(connection: StormyWordpressConnection, title, content, status):
+def PostCreate(connection: StormyWordpressConnection, title, content, hash, status):
     post_data = {
         "title": title, 
         "content": content,
+        "meta": {"md5hash":hash},
         "status": status  # Can be 'publish', 'draft', etc.
     }
     response = requests.post(
         "{}/{}".format(connection.site_url, POSTS_API_PATH),
         json=post_data,
+        #data=json.dumps(post_data),
         auth=HTTPBasicAuth(connection.username, connection.password)
     )
     resp = StormyWordpressResponse(
@@ -81,16 +90,20 @@ def PostUpdate(connection: StormyWordpressConnection,
                title, 
                content, 
                post_id, 
+               hash,
                status):
     post_data = {
         "title": title, 
         "content": content,
         "post_id": post_id,
+        "meta": {"md5hash":hash},
         "status": status  # Can be 'publish', 'draft', etc.
     }
+    print(post_data["meta"])
     response = requests.post(
         "{}/{}/{}".format(connection.site_url, POSTS_API_PATH, post_id),
         json=post_data,
+        #data=json.dumps(post_data),
         auth=HTTPBasicAuth(connection.username, connection.password)
     )
     

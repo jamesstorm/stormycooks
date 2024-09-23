@@ -3,6 +3,7 @@ import os
 import markdown
 import frontmatter
 import re
+import hashlib
 import StormyWordpress
 import WordPressSecrets
 import MarkdownSecrets
@@ -59,15 +60,13 @@ def main():
         if not filepath.endswith(".md"): # ignore files that are not markdown. 
             continue
 
-        fm = frontmatter.load(filepath) 
- 
+        fm = get_frontmatter_from_filepath(filepath)
+
         # ignore files that do not have the stormycooks.com property 
         if "stormycooks.com" not in fm.keys(): 
             continue
- 
-        post_id=None
-        if "post_id" in fm.keys():
-            post_id = fm["post_id"]
+
+        post_id = get_post_id_from_fm(fm)
 
         # ignore files where stormycooks.com property is not True
         if fm["stormycooks.com"]: 
@@ -89,8 +88,12 @@ def main():
         post_to_wordpress(recipes[recipe])
 
 
-
-
+def get_post_id_from_fm(fm):
+    # returns the post_id or None if the property does nt exist.
+    post_id=None
+    if "post_id" in fm.keys():
+        post_id = fm["post_id"]
+    return post_id
 
 def post_to_wordpress(recipe_dict):
 
@@ -105,6 +108,7 @@ def post_to_wordpress(recipe_dict):
             recipe_dict['friendly_name'], 
             recipe_dict["html"], 
             recipe_dict["post_id"], 
+            recipe_dict["frontmatter"]["md5hash"],
             "publish")
         if response.ok:
             print("updated {} - {}".format(
@@ -116,6 +120,7 @@ def post_to_wordpress(recipe_dict):
             wp_connection, 
             recipe_dict['friendly_name'], 
             recipe_dict["html"], 
+            recipe_dict["frontmatter"]["md5hash"],
             "publish")
         if response.ok:
             print("created {} - {}".format(
@@ -127,14 +132,35 @@ def post_to_wordpress(recipe_dict):
 
 def add_post_id_to_obsidian_file(recipe_dict, post_id):
     # Adds or updates the value of the post_id propoerty in the markdown file
-    filepath = os.path.join(site_markdown_files, recipe_dict["filename"])
+    filepath = os.path.join(markdown_dir, recipe_dict["filename"])
     fm = frontmatter.load(filepath) 
     fm["post_id"] = post_id
-    with open (filepath, 'w') as f:
-        f.write(frontmatter.dumps(fm))
+    save_md_from_frontmatter(fm, filepath)
     return True
 
+def get_frontmatter_from_filepath(filepath):
 
+    fm = frontmatter.load(filepath) 
+    if fm_has_md5hash(fm):
+        return fm
+    fm["md5hash"] = generate_md5hash_from_fm(fm)
+    save_md_from_frontmatter(fm, filepath)
+    return fm
+
+def fm_has_md5hash(fm):
+    if "md5hash" not in fm.keys():
+        return False    
+    if fm["md5hash"] == None:
+        return False 
+    return True    
+
+def generate_md5hash_from_fm(fm):
+    md5hash = hashlib.md5(fm.content.encode('utf-8')).hexdigest() 
+    return md5hash
+
+def save_md_from_frontmatter(fm, filepath):
+    with open (filepath, 'w') as f:
+        f.write(frontmatter.dumps(fm))
 
 def CheckTheThings():
     # checks:
