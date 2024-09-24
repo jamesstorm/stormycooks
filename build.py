@@ -53,11 +53,13 @@ def main():
     recipes = {}
     for recipe_md_filename in obsidian_files:
         filepath = os.path.join(markdown_dir, recipe_md_filename)
-
-        if os.path.isdir((filepath)): # ignore directories
+        
+        # ignore directories
+        if os.path.isdir((filepath)): 
             continue
 
-        if not filepath.endswith(".md"): # ignore files that are not markdown. 
+        # ignore files that are not markdown.
+        if not filepath.endswith(".md"):  
             continue
 
         fm = get_frontmatter_from_filepath(filepath)
@@ -75,14 +77,15 @@ def main():
             recipe_html = markdown.markdown(
                 strip_mynotes(fm.content), 
                 extentions=['markdown_captions'])
-
+            fm["md5hash"] = generate_md5hash_from_fm(fm)
             recipes[recipe_md_filename] = {
-                "filename":recipe_md_filename, 
+                "filepath": filepath,
+                "filename":recipe_md_filename,
                 "frontmatter":fm,
                 "html": recipe_html,
                 "friendly_name": friendly_name,
                 "url_name": url_name,
-                "post_id": post_id 
+                "post_id": post_id
                 }
     for recipe in recipes:
         post_to_wordpress(recipes[recipe])
@@ -98,24 +101,11 @@ def get_post_id_from_fm(fm):
 def post_to_wordpress(recipe_dict):
 
     post_id = recipe_dict["post_id"]
+    post_hash =  StormyWordpress.PostExists(wp_connection, post_id)
 
-    if not post_id == None and StormyWordpress.PostExists(
-        wp_connection, post_id) : 
-        # Update Post - if there is a post_id and there 
-        # is a post with this id on the wp site
-        response = StormyWordpress.PostUpdate(
-            wp_connection, 
-            recipe_dict['friendly_name'], 
-            recipe_dict["html"], 
-            recipe_dict["post_id"], 
-            recipe_dict["frontmatter"]["md5hash"],
-            "publish")
-        if response.ok:
-            print("updated {} - {}".format(
-                recipe_dict["post_id"], 
-                recipe_dict["friendly_name"]))
-    else:
-        # Create Post - if there is no post_id
+    if recipe_dict["post_id"] == None and post_hash == False:
+        # create 
+        print("creating {}".format(recipe_dict["friendly_name"]))
         response = StormyWordpress.PostCreate(
             wp_connection, 
             recipe_dict['friendly_name'], 
@@ -127,6 +117,29 @@ def post_to_wordpress(recipe_dict):
                 recipe_dict["post_id"],
                 recipe_dict["friendly_name"]))
             add_post_id_to_obsidian_file(recipe_dict, response.data)
+        return
+
+    if post_hash == recipe_dict["frontmatter"]["md5hash"]:
+        # don't update because content has not changed
+        print("skipping {} becase no changes.".format(recipe_dict["friendly_name"]))
+        return
+
+    # update
+    print("updating {}".format(recipe_dict["friendly_name"]))
+    response = StormyWordpress.PostUpdate(
+        wp_connection, 
+        recipe_dict['friendly_name'], 
+        recipe_dict["html"], 
+        recipe_dict["post_id"], 
+        recipe_dict["frontmatter"]["md5hash"],
+        "publish")
+    save_md_from_frontmatter(recipe_dict["frontmatter"], recipe_dict["filepath"])
+    if response.ok:
+        print("updated {} - {}".format(
+            recipe_dict["post_id"], 
+            recipe_dict["friendly_name"]))
+
+
 
 
 

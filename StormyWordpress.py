@@ -56,7 +56,18 @@ def GetPosts(connection: StormyWordpressConnection):
     print(response.json())
 
 
+
 def PostExists(connection: StormyWordpressConnection, post_id):
+    url = "{}/{}/{}".format(connection.site_url, POSTS_API_PATH, post_id)
+    response = requests.get(url, auth=HTTPBasicAuth(
+        connection.username, 
+        connection.password))
+    if response.status_code == 200:
+        return response.json()["meta"]["md5hash"]
+    return False
+
+
+def PostExists_deleteme(connection: StormyWordpressConnection, post_id):
     url = "{}/{}/{}".format(connection.site_url, POSTS_API_PATH, post_id)
     response = requests.get(url, auth=HTTPBasicAuth(
         connection.username, 
@@ -85,6 +96,11 @@ def PostCreate(connection: StormyWordpressConnection, title, content, hash, stat
         response.json()["id"])
     return resp
 
+def GetPostHash(post_id):
+    post_id = ""
+    
+    return post_id
+
 
 def PostUpdate(connection: StormyWordpressConnection, 
                title, 
@@ -92,6 +108,17 @@ def PostUpdate(connection: StormyWordpressConnection,
                post_id, 
                hash,
                status):
+    
+
+
+    # Only do the update if the contnt has changed.
+    if GetPostHash(post_id) == hash:
+        return StormyWordpressResponse(
+            None, 
+            ok, 
+            "Post not updated because the content has not changed")
+    
+    
     post_data = {
         "title": title, 
         "content": content,
