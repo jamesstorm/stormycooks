@@ -53,7 +53,7 @@ def main():
     recipes = {}
     for recipe_md_filename in obsidian_files:
         filepath = os.path.join(markdown_dir, recipe_md_filename)
-        
+
         # ignore directories
         if os.path.isdir((filepath)): 
             continue
@@ -71,24 +71,38 @@ def main():
         post_id = get_post_id_from_fm(fm)
 
         # ignore files where stormycooks.com property is not True
-        if fm["stormycooks.com"]: 
-            friendly_name = recipe_md_filename.replace(".md", "")
-            url_name = friendly_name.replace(" ", "-")
-            recipe_html = markdown.markdown(
-                strip_mynotes(fm.content), 
-                extentions=['markdown_captions'])
-            fm["md5hash"] = generate_md5hash_from_fm(fm)
-            recipes[recipe_md_filename] = {
-                "filepath": filepath,
-                "filename":recipe_md_filename,
-                "frontmatter":fm,
-                "html": recipe_html,
-                "friendly_name": friendly_name,
-                "url_name": url_name,
-                "post_id": post_id
-                }
+        if not fm["stormycooks.com"]:
+            continue
+
+        friendly_name = recipe_md_filename.replace(".md", "")
+        url_name = friendly_name.replace(" ", "-")
+        recipe_html = markdown.markdown(
+            strip_mynotes(fm.content), 
+            extentions=['markdown_captions'])
+        #fm["md5hash"] = generate_md5hash_from_fm(fm)
+        recipes[recipe_md_filename] = {
+            "filepath": filepath,
+            "filename":recipe_md_filename,
+            "frontmatter":fm,
+            "html": recipe_html,
+            "friendly_name": friendly_name,
+            "url_name": url_name,
+            "post_id": post_id,
+            "md5hash": generate_md5hash_from_fm(fm)
+            }
+    
+    if not preflight_check_recipes(recipes):
+        print("Recipe preflight checks failed. WP not updated.")
+        return False
+
+
     for recipe in recipes:
         post_to_wordpress(recipes[recipe])
+
+def preflight_check_recipes(recipes):
+    # check for duplicate post_id among recipes
+    # check for duplicate titles (once using title property)
+    return True
 
 
 def get_post_id_from_fm(fm):
@@ -110,7 +124,7 @@ def post_to_wordpress(recipe_dict):
             wp_connection, 
             recipe_dict['friendly_name'], 
             recipe_dict["html"], 
-            recipe_dict["frontmatter"]["md5hash"],
+            recipe_dict["md5hash"],
             "publish")
         if response.ok:
             print("created {} - {}".format(
@@ -119,7 +133,7 @@ def post_to_wordpress(recipe_dict):
             add_post_id_to_obsidian_file(recipe_dict, response.data)
         return
 
-    if post_hash == recipe_dict["frontmatter"]["md5hash"]:
+    if post_hash == recipe_dict["md5hash"]:
         # don't update because content has not changed
         print("skipping {} becase no changes.".format(recipe_dict["friendly_name"]))
         return
@@ -131,7 +145,7 @@ def post_to_wordpress(recipe_dict):
         recipe_dict['friendly_name'], 
         recipe_dict["html"], 
         recipe_dict["post_id"], 
-        recipe_dict["frontmatter"]["md5hash"],
+        recipe_dict["md5hash"],
         "publish")
     save_md_from_frontmatter(recipe_dict["frontmatter"], recipe_dict["filepath"])
     if response.ok:
@@ -156,8 +170,8 @@ def get_frontmatter_from_filepath(filepath):
     fm = frontmatter.load(filepath) 
     if fm_has_md5hash(fm):
         return fm
-    fm["md5hash"] = generate_md5hash_from_fm(fm)
-    save_md_from_frontmatter(fm, filepath)
+    #fm["md5hash"] = generate_md5hash_from_fm(fm)
+    #save_md_from_frontmatter(fm, filepath)
     return fm
 
 def fm_has_md5hash(fm):
