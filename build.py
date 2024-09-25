@@ -4,6 +4,7 @@ import markdown
 import frontmatter
 import re
 import hashlib
+import argparse
 import StormyWordpress
 import WordPressSecrets
 import MarkdownSecrets
@@ -23,7 +24,7 @@ import MarkdownSecrets
 # MARKDOWN_DIR = "[full path the mardown files]")
 
 
-FORCE_UPDATE_ALL = True
+FORCE_UPDATE_ALL = False 
 markdown_dir = MarkdownSecrets.MARKDOWN_DIR 
 images_dir  = f"{markdown_dir}/img" 
 
@@ -38,6 +39,12 @@ wp_connection = StormyWordpress.StormyWordpressConnection(
 
 
 
+parser = argparse.ArgumentParser()
+parser.add_argument("-f", "--forceupdate",action="store_true", help="Forces an update of all recipes")
+
+args = parser.parse_args()
+if args.forceupdate:
+    FORCE_UPDATE_ALL = True
 
 
 def main():
@@ -112,7 +119,8 @@ def convert_recipe_links(recipes):
     for recipe in recipes:
         # first, find the [[]] links and ensure they point at a 
         # file that is in the rescipes object.
-        links = re.findall("\[\[(.*?)\]\]", recipes[recipe]["html"])
+        pattern = r"\[\[(.*?)\]\]"
+        links = re.findall(pattern, recipes[recipe]["html"])
         for link in links:
             link_filename = "{}{}".format(link, ".md")
             if  link_filename in recipes.keys():
