@@ -20,9 +20,10 @@ import MarkdownSecrets
 # MarkdownSecrets should be in a file called MarkdownSecrets.py. 
 # The contents should look like this:
 #
-# MARKDOWN_DIR = "[full path the mardown files]"
+# MARKDOWN_DIR = "[full path the mardown files]")
 
 
+FORCE_UPDATE_ALL = True
 markdown_dir = MarkdownSecrets.MARKDOWN_DIR 
 images_dir  = f"{markdown_dir}/img" 
 
@@ -98,12 +99,42 @@ def main():
         print("Recipe preflight checks failed. WP not updated.")
         return False
 
+    recipes = convert_recipe_links(recipes)
+
+    #return #for nown
 
     for recipe in recipes:
         post_to_wordpress(recipes[recipe])
 
+
+def convert_recipe_links(recipes):
+  
+    for recipe in recipes:
+        # first, find the [[]] links and ensure they point at a 
+        # file that is in the rescipes object.
+        links = re.findall("\[\[(.*?)\]\]", recipes[recipe]["html"])
+        for link in links:
+            link_filename = "{}{}".format(link, ".md")
+            if  link_filename in recipes.keys():
+                # link is good. replace with id based href
+                find = "[[{}]]".format(link)
+                replace_with = "<a href='{url}?p={id}'>{txt}</a>".format(
+                        url=WP_SITE_URL, 
+                        id=recipes[link_filename]["post_id"], 
+                        txt=link)
+                recipes[recipe]["html"] = recipes[recipe]["html"].replace(
+                    find, replace_with) 
+            else:
+                recipes[recipe]["html"] = recipes[recipe]["html"].replace(
+                    "[[{}]]".format(link), link)
+
+                # link is outside published Cooking recipes.
+                # replace with the words. 
+    return recipes
+True
+
 def preflight_check_recipes(recipes, wp_connection):
-    # check for duplicate post_id among recipes
+    # check for duplicate npost_id among recipes
     post_ids = {} 
     for recipe in recipes:
         id = recipes[recipe]["post_id"] 
@@ -118,9 +149,13 @@ def preflight_check_recipes(recipes, wp_connection):
             return False
         post_ids[id] = recipes[recipe]
 
-    # ensure all the post_ids in md files exist in wp.
+    # ensure all the post_ids in md files exist in wp
+    # it is ok if the post_id = None because that is the 
+    # new recipe case..
     for recipe in recipes:
         id = recipes[recipe]["post_id"]
+        if id == None:
+            continue
         filename = recipes[recipe]["filename"]
         msg = "The file '{filename}' contains post_id={id} that does not exist in Worpress"
         if not StormyWordpress.PostExists(wp_connection, id):
@@ -162,13 +197,20 @@ def post_to_wordpress(recipe_dict):
             add_post_id_to_obsidian_file(recipe_dict, response.data)
         return
 
-    if post_hash == recipe_dict["md5hash"]:
+    if post_hash == recipe_dict["md5hash"] and FORCE_UPDATE_ALL == False: 
         # don't update because content has not changed
         print("skipping {} becase no changes.".format(
             recipe_dict["friendly_name"]))
         return
     print("post_hash = {}".format(post_hash))
     # update
+
+
+    wp_post_update(recipe_dict) 
+
+
+def wp_post_update(recipe_dict):
+
     print("updating {}".format(recipe_dict["friendly_name"]))
     response = StormyWordpress.PostUpdate(
         wp_connection, 
@@ -184,10 +226,6 @@ def post_to_wordpress(recipe_dict):
         print("updated {} - {}".format(
             recipe_dict["post_id"], 
             recipe_dict["friendly_name"]))
-
-
-
-
 
 def add_post_id_to_obsidian_file(recipe_dict, post_id):
     # Adds or updates the value of the post_id propoerty in the markdown file
@@ -245,8 +283,8 @@ def CheckTheThings():
 
 
 def strip_mynotes(recipe_html):
-    markdown_image_pattern = r'^> *\[!My Notes\].*(\n>.*)*'
-    converted_text = re.sub(markdown_image_pattern, "", recipe_html)
+    markdown_callout_pattern = r'> *\[!My Notes\].*(\n>.*)*'
+    converted_text = re.sub(markdown_callout_pattern, "", recipe_html)
     return converted_text
     
 
