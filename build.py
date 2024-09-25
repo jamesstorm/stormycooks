@@ -73,6 +73,10 @@ def main():
         if not "title" in fm.keys():
             fm["title"] = friendly_name
             save_md_from_frontmatter(fm, filepath)
+        if not fm["title"]:
+            fm["title"] = friendly_name
+            save_md_from_frontmatter(fm, filepath)
+
         url_name = friendly_name.replace(" ", "-")
         recipe_html = markdown.markdown(
             strip_mynotes(fm.content), 
