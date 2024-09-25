@@ -23,11 +23,6 @@ import MarkdownSecrets
 # MARKDOWN_DIR = "[full path the mardown files]"
 
 
-
-
-
-
-
 markdown_dir = MarkdownSecrets.MARKDOWN_DIR 
 images_dir  = f"{markdown_dir}/img" 
 
@@ -75,6 +70,9 @@ def main():
             continue
 
         friendly_name = recipe_md_filename.replace(".md", "")
+        if not "title" in fm.keys():
+            fm["title"] = friendly_name
+            save_md_from_frontmatter(fm, filepath)
         url_name = friendly_name.replace(" ", "-")
         recipe_html = markdown.markdown(
             strip_mynotes(fm.content), 
@@ -82,6 +80,7 @@ def main():
         #fm["md5hash"] = generate_md5hash_from_fm(fm)
         recipes[recipe_md_filename] = {
             "filepath": filepath,
+            "title":fm["title"],
             "filename":recipe_md_filename,
             "frontmatter":fm,
             "html": recipe_html,
@@ -148,7 +147,7 @@ def post_to_wordpress(recipe_dict):
         print("creating {}".format(recipe_dict["friendly_name"]))
         response = StormyWordpress.PostCreate(
             wp_connection, 
-            recipe_dict['friendly_name'], 
+            recipe_dict['title'], 
             recipe_dict["html"], 
             recipe_dict["md5hash"],
             "publish")
@@ -169,7 +168,7 @@ def post_to_wordpress(recipe_dict):
     print("updating {}".format(recipe_dict["friendly_name"]))
     response = StormyWordpress.PostUpdate(
         wp_connection, 
-        recipe_dict['friendly_name'], 
+        recipe_dict['title'], 
         recipe_dict["html"], 
         recipe_dict["post_id"], 
         recipe_dict["md5hash"],
@@ -211,7 +210,9 @@ def fm_has_md5hash(fm):
     return True    
 
 def generate_md5hash_from_fm(fm):
-    md5hash = hashlib.md5(fm.content.encode('utf-8')).hexdigest() 
+    content_plus_title = "{}{}".format(fm.content, fm["title"])
+    md5hash = hashlib.md5(content_plus_title.encode('utf-8')).hexdigest() 
+    #md5hash = hashlib.md5(fm.content.encode('utf-8')).hexdigest() 
     return md5hash
 
 def save_md_from_frontmatter(fm, filepath):
