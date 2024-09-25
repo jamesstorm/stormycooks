@@ -64,7 +64,7 @@ def PostExists(connection: StormyWordpressConnection, post_id):
         connection.password))
     if response.status_code == 200:
         return response.json()["meta"]["md5hash"]
-    return False
+    return ""
 
 
 def PostExists_deleteme(connection: StormyWordpressConnection, post_id):

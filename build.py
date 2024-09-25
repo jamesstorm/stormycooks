@@ -91,7 +91,7 @@ def main():
             "md5hash": generate_md5hash_from_fm(fm)
             }
     
-    if not preflight_check_recipes(recipes):
+    if not preflight_check_recipes(recipes, wp_connection):
         print("Recipe preflight checks failed. WP not updated.")
         return False
 
@@ -99,8 +99,34 @@ def main():
     for recipe in recipes:
         post_to_wordpress(recipes[recipe])
 
-def preflight_check_recipes(recipes):
+def preflight_check_recipes(recipes, wp_connection):
     # check for duplicate post_id among recipes
+    post_ids = {} 
+    for recipe in recipes:
+        id = recipes[recipe]["post_id"] 
+        msg = "post id {} is used more than once in recipe files. Check files: {} and {}"
+        if id in post_ids.keys():
+            print(msg.format(
+                    id, 
+                    recipes[recipe]["filename"], 
+                    post_ids[id]["filename"])
+            )
+            del post_ids # cleanup
+            return False
+        post_ids[id] = recipes[recipe]
+
+    # ensure all the post_ids in md files exist in wp.
+    for recipe in recipes:
+        id = recipes[recipe]["post_id"]
+        filename = recipes[recipe]["filename"]
+        msg = "The file '{filename}' contains post_id={id} that does not exist in Worpress"
+        if not StormyWordpress.PostExists(wp_connection, id):
+            print(msg.format(
+                id=id, 
+                filename=filename
+                )
+            )
+            return False
     # check for duplicate titles (once using title property)
     return True
 
@@ -135,9 +161,10 @@ def post_to_wordpress(recipe_dict):
 
     if post_hash == recipe_dict["md5hash"]:
         # don't update because content has not changed
-        print("skipping {} becase no changes.".format(recipe_dict["friendly_name"]))
+        print("skipping {} becase no changes.".format(
+            recipe_dict["friendly_name"]))
         return
-
+    print("post_hash = {}".format(post_hash))
     # update
     print("updating {}".format(recipe_dict["friendly_name"]))
     response = StormyWordpress.PostUpdate(
@@ -147,7 +174,9 @@ def post_to_wordpress(recipe_dict):
         recipe_dict["post_id"], 
         recipe_dict["md5hash"],
         "publish")
-    save_md_from_frontmatter(recipe_dict["frontmatter"], recipe_dict["filepath"])
+    save_md_from_frontmatter(
+        recipe_dict["frontmatter"], 
+        recipe_dict["filepath"])
     if response.ok:
         print("updated {} - {}".format(
             recipe_dict["post_id"], 
