@@ -6,6 +6,7 @@
 #import re
 #import hashlib
 import argparse
+import json
 import WordpressPosts
 import WordPressSecrets
 import MarkdownSecrets
@@ -61,19 +62,70 @@ def main():
 
 
     WPPosts = WordpressPosts.WordpressPosts(WPConnection)
-    print(WPPosts.posts_json)
+    
+    with open ("./posts.json", 'w') as f:
+        f.write(json.dumps(WPPosts.posts, indent=4))
 
 
+    # posts to update
+    #   title, content, status
+    #   update if:
+    #       md5hash is different
+    #       status is different
+    # posts to create
+    #   create if:
+    #       stormycooks.com = True
+    #       and Ofile has no post_id
+    # posts to remove
+    #   remove from wordpress if:
+    #       WPPost has no associated OFile 
 
-    #for f in OFiles.files:
-    #    print(OFiles.files[f].filepath)
-    #    print(OFiles.files[f].md5hash)
-    #    print(OFiles.files[f].post_id)
+    # Posts to update
+    
+    for OFileName in OFiles.files:
+
+        ofile = OFiles.files[OFileName]
+        post_id = ofile.post_id
+        if not post_id in WPPosts.keys():
+            continue
+        wppost = WPPosts[post_id]
+        #print("================")
+        #print(OFileName)
+        #print("WP Hash: {}".format(wppost.md5hash))
+        #print("Ob Hash: {}".format(ofile.md5hash))
+        #print("WP status: {}".format(wppost.status))
+        #print("Ob status: {}".format(ofile.status))
+
+        if not wppost.md5hash == ofile.md5hash or not wppost.status == ofile.status:
+            print("UPDATE ME")
+            wppost.Update(ofile.md5hash, ofile.title, ofile.html, ofile.status)
+    
+    # Posts to create 
+
+    #for OFileName in OFiles.files:
+
+    #    
+
+    #    ofile = OFiles.files[OFileName]
+    #    post_id = ofile.post_id
+    #    print("================")
+    #    print("OFile:")
+    #    print(OFileName)
+    #    print(ofile.filepath)
+    #    print(post_id)
+    #    print(ofile.md5hash)
+    #    print(ofile.frontmatter["stormycooks.com"])
+
+    #    print("----------------")
+    #     
+    #    if post_id in WPPosts.keys():
+    #        wppost = WPPosts[post_id]
+    #        print("YES")
+    #        print(wppost.md5hash)
+    #    else:
+    #        print("NO")
+
+
     return True
-
-
-
-
-
 
 main()

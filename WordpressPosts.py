@@ -34,35 +34,83 @@ class WordpressConnection:
             if e.response.status_code == 401:
                 raise Exception("Unauthorized - check credentials", e)
             if e.response.status_code == 404:
-                raise Exception("no api url present. is this a WordPress site?")
+                raise Exception(
+                    "no api url present. is this a WordPress site?")
             else:
-                raise Exception("HTTPError when testing Wordpress connection", e)
+                raise Exception(
+                    "HTTPError when testing Wordpress connection", e)
         except requests.RequestException as e:
-            raise Exception("Request exception while testing Wordpress Connection", e )
+            raise Exception(
+                "Request exception while testing Wordpress Connection", e )
         except requests.exceptions.ConnectionError as e:
-            raise Exception("ConnectionError while testing Wordpress Connection", e )
+            raise Exception(
+                "ConnectionError while testing Wordpress Connection", e )
 
 
 
-class WordpressPosts:
+class WordpressPosts(dict):
     def __init__(self, wp_connection: WordpressConnection):
         self.connection = wp_connection
-        self._fetchPosts()
+        self.posts = self._fetchPosts()
+        self._add_post_keys()
         return
-
-
-
 
     def _fetchPosts(self):
         url = "{}/{}".format(self.connection.site_url, POSTS_API_PATH)
-        response = requests.get(url, auth=HTTPBasicAuth(
-            self.connection.username, 
-            self.connection.password))
-        self.posts_json = response.json()
-        return True
-
-
+        posts = [] 
+        per_page = 100 
+        page = 1
+        while True:
+            params = {
+                'per_page': per_page,
+                'page':page,
+                'status': 'publish,draft'}
+            response = requests.get(url, params, auth=HTTPBasicAuth(
+                self.connection.username,
+                self.connection.password))
+            self.posts_json = response.json()
+            if response.status_code != 200:
+                break
+            page_posts = response.json()
+            if not page_posts:
+                break
+            posts.extend(page_posts)
+            page += 1
+        return posts
+    
+    def _add_post_keys(self):
+        for post in self.posts:
+            self[post["id"]] = WordpressPost(post, self.connection)
+    
 
 class WordpressPost:
-    def __init__(self):
+    def __init__(self, wp_post_json, connection):
+        self.post_json = wp_post_json
+        self.md5hash = wp_post_json["meta"]["md5hash"]
+        self.title = wp_post_json["title"]
+        self.status = wp_post_json["status"]
+        self.post_id = wp_post_json["id"]
+        self.connection = connection
         return
+
+
+    def Update(self, md5hash, title, content, status):
+        post_data = {
+            "title": title, 
+            "content": content,
+            "post_id": self.post_id,
+            "meta": {"md5hash":md5hash},
+            "status": status  # Can be 'publish', 'draft', etc.
+        }
+        response = requests.post(
+            "{}/{}/{}".format(self.connection.site_url, POSTS_API_PATH, self.post_id),
+            json=post_data,
+            #data=json.dumps(post_data),
+            auth=HTTPBasicAuth(self.connection.username, self.connection.password)
+        )
+        
+        #resp = StormyWordpressResponse(
+        #    response.status_code, 
+        #    response.ok, 
+        #    response.json()["id"])
+        #return resp

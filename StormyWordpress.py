@@ -31,7 +31,7 @@ class StormyWordpressConnection:
                 response.json()) 
         except requests.exceptions.HTTPError as e:
             if e.response.status_code == 401:
-                return StormyWordpressResponse(
+                return SmormyWordpressResponse(
                     e.response.status_code, 
                     False, 
                     "Unauthorized - check credentials")
@@ -64,7 +64,7 @@ def PostExists(connection: StormyWordpressConnection, post_id):
         connection.password))
     if response.status_code == 200:
         return response.json()["meta"]["md5hash"]
-    return False 
+    return Fal 
 
 
 def PostExists_deleteme(connection: StormyWordpressConnection, post_id):
