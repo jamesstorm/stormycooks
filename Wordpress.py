@@ -1,6 +1,6 @@
 import requests
 from requests.auth import HTTPBasicAuth
-import json
+#import json
 
 POSTS_API_PATH="wp-json/wp/v2/posts"
 USERS_API_PATH="wp-json/wp/v2/users"
@@ -81,6 +81,30 @@ class WordpressPosts(dict):
     def _add_post_keys(self):
         for post in self.posts:
             self[post["id"]] = WordpressPost(post, self.connection)
+
+
+    def CreatePost(self, md5hash, title, content, status="draft"):
+        
+        post_data = {
+            "title": title, 
+            "content": content,
+            "meta": {"md5hash":md5hash},
+            "status": status  # Can be 'publish', 'draft', etc.
+        }
+        response = requests.post(
+            "{}/{}".format(self.connection.site_url, 
+                              POSTS_API_PATH),
+            json=post_data,
+            auth=HTTPBasicAuth(self.connection.username, 
+                               self.connection.password)
+        )
+        #print(response.json()["id"])
+        new_post = WordpressPost(response.json(), self.connection)
+        #print(new_post.post_id)
+        #print(new_post.md5hash)
+        self[response.json()["id"]] = new_post
+        return new_post
+    
     
 
 class WordpressPost:
@@ -93,6 +117,19 @@ class WordpressPost:
         self.connection = connection
         return
 
+    def Trash(self):
+        self.Delete()
+        return
+
+    def Delete(self):
+        response = requests.delete(
+            "{}/{}/{}".format(self.connection.site_url, 
+                              POSTS_API_PATH, 
+                              self.post_id),
+            auth=HTTPBasicAuth(self.connection.username, 
+                               self.connection.password))
+
+        return
 
     def Update(self, md5hash, title, content, status):
         post_data = {
@@ -103,14 +140,12 @@ class WordpressPost:
             "status": status  # Can be 'publish', 'draft', etc.
         }
         response = requests.post(
-            "{}/{}/{}".format(self.connection.site_url, POSTS_API_PATH, self.post_id),
+            "{}/{}/{}".format(self.connection.site_url, 
+                              POSTS_API_PATH, 
+                              self.post_id),
             json=post_data,
             #data=json.dumps(post_data),
-            auth=HTTPBasicAuth(self.connection.username, self.connection.password)
+            auth=HTTPBasicAuth(self.connection.username, 
+                               self.connection.password)
         )
         
-        #resp = StormyWordpressResponse(
-        #    response.status_code, 
-        #    response.ok, 
-        #    response.json()["id"])
-        #return resp

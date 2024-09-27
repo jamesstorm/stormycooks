@@ -1,0 +1,224 @@
+[
+    {
+        "id": 609,
+        "date": "2024-09-27T14:37:21",
+        "date_gmt": "2024-09-27T18:37:21",
+        "guid": {
+            "rendered": "https://wordpress.stormycooks.com/?p=609"
+        },
+        "modified": "2024-09-27T14:37:21",
+        "modified_gmt": "2024-09-27T18:37:21",
+        "slug": "",
+        "status": "draft",
+        "type": "post",
+        "link": "https://wordpress.stormycooks.com/?p=609",
+        "title": {
+            "rendered": "Marinara Sauce nivce"
+        },
+        "content": {
+            "rendered": "<h2>Notes</h2>\n<ul>\n<li>Add things here</li>\n</ul>\n<h2>Ingredients</h2>\n<ul>\n<li></li>\n</ul>\n<h2>Mise en place</h2>\n<ul>\n<li></li>\n</ul>\n<h2>Preparation</h2>\n<p>&#8211;</p>\n",
+            "protected": false
+        },
+        "excerpt": {
+            "rendered": "<p>Notes Add things here Ingredients Mise en place Preparation &#8211;</p>\n",
+            "protected": false
+        },
+        "author": 1,
+        "featured_media": 0,
+        "comment_status": "open",
+        "ping_status": "open",
+        "sticky": false,
+        "template": "",
+        "format": "standard",
+        "meta": {
+            "md5hash": "c1cb87adb852287d4989940c52657f5e",
+            "footnotes": ""
+        },
+        "categories": [
+            1
+        ],
+        "tags": [],
+        "class_list": [
+            "post-609",
+            "post",
+            "type-post",
+            "status-draft",
+            "format-standard",
+            "hentry",
+            "category-uncategorized"
+        ],
+        "_links": {
+            "self": [
+                {
+                    "href": "https://wordpress.stormycooks.com/wp-json/wp/v2/posts/609"
+                }
+            ],
+            "collection": [
+                {
+                    "href": "https://wordpress.stormycooks.com/wp-json/wp/v2/posts"
+                }
+            ],
+            "about": [
+                {
+                    "href": "https://wordpress.stormycooks.com/wp-json/wp/v2/types/post"
+                }
+            ],
+            "author": [
+                {
+                    "embeddable": true,
+                    "href": "https://wordpress.stormycooks.com/wp-json/wp/v2/users/1"
+                }
+            ],
+            "replies": [
+                {
+                    "embeddable": true,
+                    "href": "https://wordpress.stormycooks.com/wp-json/wp/v2/comments?post=609"
+                }
+            ],
+            "version-history": [
+                {
+                    "count": 0,
+                    "href": "https://wordpress.stormycooks.com/wp-json/wp/v2/posts/609/revisions"
+                }
+            ],
+            "wp:attachment": [
+                {
+                    "href": "https://wordpress.stormycooks.com/wp-json/wp/v2/media?parent=609"
+                }
+            ],
+            "wp:term": [
+                {
+                    "taxonomy": "category",
+                    "embeddable": true,
+                    "href": "https://wordpress.stormycooks.com/wp-json/wp/v2/categories?post=609"
+                },
+                {
+                    "taxonomy": "post_tag",
+                    "embeddable": true,
+                    "href": "https://wordpress.stormycooks.com/wp-json/wp/v2/tags?post=609"
+                }
+            ],
+            "curies": [
+                {
+                    "name": "wp",
+                    "href": "https://api.w.org/{rel}",
+                    "templated": true
+                }
+            ]
+        }
+    },
+    {
+        "id": 602,
+        "date": "2024-09-27T14:24:52",
+        "date_gmt": "2024-09-27T18:24:52",
+        "guid": {
+            "rendered": "https://wordpress.stormycooks.com/?p=602"
+        },
+        "modified": "2024-09-27T14:27:44",
+        "modified_gmt": "2024-09-27T18:27:44",
+        "slug": "butter-chicken",
+        "status": "publish",
+        "type": "post",
+        "link": "https://wordpress.stormycooks.com/2024/09/27/butter-chicken/",
+        "title": {
+            "rendered": "Butter Chicken"
+        },
+        "content": {
+            "rendered": "<p><img decoding=\"async\" alt=\"my caption\" src=\"/Cooking/img/butterchicken-above.png\" /></p>\n<h2>Ingredients</h2>\n<h3>For the Marinade (on Day One)</h3>\n<ul>\n<li>1.5 lb chicken\n<ul>\n<li>Breast or thighs </li>\n<li>Sometimes I just butcher  the meat from half a chicken</li>\n</ul>\n</li>\n<li>0.5\u00a0cup\u00a0plain yogurt</li>\n<li>3 cloves fresh garlic </li>\n<li>1\u00a0Tbsp ginger </li>\n<li>2\u00a0tsp\u00a0Garam Masala</li>\n<li>1\u00a0tsp\u00a0turmeric </li>\n<li>1\u00a0tsp\u00a0ground cumin</li>\n<li>1\u00a0tsp\u00a0red chili powder*</li>\n<li>1\u00a0tsp\u00a0of salt</li>\n</ul>\n<h3>For the sauce (on Day Two)</h3>\n<ul>\n<li>2 Tbsp olive oil</li>\n<li>2\u00a0Tbsp ghee\u00a0(or butter) </li>\n<li>1\u00a0large\u00a0onion,\u00a0sliced or chopped (size doesn\u2019t matter since it will be blended smooth)</li>\n<li>4 cloves garlic minced</li>\n<li>1\u00a0Tbsp\u00a0fresh ginger ,\u00a0minced or finely grated</li>\n<li>1.5 teaspoons\u00a0ground cumin</li>\n<li>1.5\u00a0teaspoons\u00a0Garam Masala</li>\n<li>1\u00a0teaspoon\u00a0ground coriander</li>\n<li>14\u00a0oz\u00a0(400 g) can tomatoes (the big can) </li>\n<li>1\u00a0teaspoon\u00a0red chilli powder*\n<ul>\n<li>Do be mindful of the spice tolerances of your patrons. </li>\n</ul>\n</li>\n<li>Salt\u00a0to taste </li>\n<li>1\u00a0cup\u00a0of whipping cream</li>\n<li>1\u00a0Tbsp sugar</li>\n<li>1/2\u00a0teaspoon\u00a0kasoori methi\u00a0(dried fenugreek leaves)</li>\n</ul>\n<p><em>*Be mindful of the spice tolerances of your patrons.</em></p>\n<h2>Preparation</h2>\n<h3>Day one &#8211; Marination</h3>\n<h4>Mise en place</h4>\n<ul>\n<li>grind slices fine in a spice grinder or a mortar and pestle.</li>\n<li>slice chicken into bite sized pieces</li>\n</ul>\n<h4>Cooking</h4>\n<ul>\n<li>combine chicken with the yogurt/spice mixture</li>\n<li>marinate in the fridge for 24 hours.</li>\n</ul>\n<h3>Day two &#8211; Cooking</h3>\n<h4>Mise en Place</h4>\n<ul>\n<li>slice onion</li>\n<li>chop garlic</li>\n<li>chop ginger</li>\n<li>don&#8217;t fret about the sizes for the above items as they are all going in the blender later</li>\n<li>combine the garam masala, cumin, coriander, chili powder and then grind finely</li>\n</ul>\n<h4>Cooking</h4>\n<ul>\n<li>Heat oil at medium-high in a large high-rimmed skillet</li>\n<li>Add chicken and cook until just cooked through </li>\n<li>Remove the chicken and set aside</li>\n<li>Add the ghee to the pan </li>\n<li>Add onions and cook until starting to soften</li>\n<li>Add garlic and ginger</li>\n<li>Add the ground spices</li>\n<li>Add the tomatoes </li>\n<li>Simmer for 10-15 minutes until it is deep red colour</li>\n<li>transfer the mixture from the pan into a blender</li>\n<li>Blend until nice and smooth</li>\n<li>Add the mixture back to the pan</li>\n<li>Add the sugar, cream and stir to combine</li>\n<li>Add the kasoori methi</li>\n<li>Add the chicken</li>\n<li>gently simmer for 10 minutes</li>\n<li>\n<p>Serve.</p>\n</li>\n<li>\n<p><a href=\"https://cafedelites.com/butter-chicken/#recipe\">https://cafedelites.com/butter-chicken/#recipe</a></p>\n</li>\n</ul>\n",
+            "protected": false
+        },
+        "excerpt": {
+            "rendered": "<p>Ingredients For the Marinade (on Day One) 1.5 lb chicken Breast or thighs Sometimes I just butcher the meat from half a chicken 0.5\u00a0cup\u00a0plain yogurt 3 cloves fresh garlic 1\u00a0Tbsp ginger 2\u00a0tsp\u00a0Garam Masala 1\u00a0tsp\u00a0turmeric 1\u00a0tsp\u00a0ground cumin 1\u00a0tsp\u00a0red chili powder* 1\u00a0tsp\u00a0of salt For the sauce (on Day Two) 2 Tbsp olive oil 2\u00a0Tbsp ghee\u00a0(or butter) 1\u00a0large\u00a0onion,\u00a0sliced or chopped (size doesn\u2019t matter&#46;&#46;&#46;</p>\n",
+            "protected": false
+        },
+        "author": 1,
+        "featured_media": 0,
+        "comment_status": "open",
+        "ping_status": "open",
+        "sticky": false,
+        "template": "",
+        "format": "standard",
+        "meta": {
+            "md5hash": "b0485ad40cc5b5ede73f24d9887c5b33",
+            "footnotes": ""
+        },
+        "categories": [
+            5
+        ],
+        "tags": [],
+        "class_list": [
+            "post-602",
+            "post",
+            "type-post",
+            "status-publish",
+            "format-standard",
+            "hentry",
+            "category-featured"
+        ],
+        "_links": {
+            "self": [
+                {
+                    "href": "https://wordpress.stormycooks.com/wp-json/wp/v2/posts/602"
+                }
+            ],
+            "collection": [
+                {
+                    "href": "https://wordpress.stormycooks.com/wp-json/wp/v2/posts"
+                }
+            ],
+            "about": [
+                {
+                    "href": "https://wordpress.stormycooks.com/wp-json/wp/v2/types/post"
+                }
+            ],
+            "author": [
+                {
+                    "embeddable": true,
+                    "href": "https://wordpress.stormycooks.com/wp-json/wp/v2/users/1"
+                }
+            ],
+            "replies": [
+                {
+                    "embeddable": true,
+                    "href": "https://wordpress.stormycooks.com/wp-json/wp/v2/comments?post=602"
+                }
+            ],
+            "version-history": [
+                {
+                    "count": 1,
+                    "href": "https://wordpress.stormycooks.com/wp-json/wp/v2/posts/602/revisions"
+                }
+            ],
+            "predecessor-version": [
+                {
+                    "id": 603,
+                    "href": "https://wordpress.stormycooks.com/wp-json/wp/v2/posts/602/revisions/603"
+                }
+            ],
+            "wp:attachment": [
+                {
+                    "href": "https://wordpress.stormycooks.com/wp-json/wp/v2/media?parent=602"
+                }
+            ],
+            "wp:term": [
+                {
+                    "taxonomy": "category",
+                    "embeddable": true,
+                    "href": "https://wordpress.stormycooks.com/wp-json/wp/v2/categories?post=602"
+                },
+                {
+                    "taxonomy": "post_tag",
+                    "embeddable": true,
+                    "href": "https://wordpress.stormycooks.com/wp-json/wp/v2/tags?post=602"
+                }
+            ],
+            "curies": [
+                {
+                    "name": "wp",
+                    "href": "https://api.w.org/{rel}",
+                    "templated": true
+                }
+            ]
+        }
+    }
+]

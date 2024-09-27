@@ -1,13 +1,7 @@
 #!python
-
-#import os
-#import markdown
-#import frontmatter
-#import re
-#import hashlib
 import argparse
 import json
-import WordpressPosts
+import Wordpress
 import WordPressSecrets
 import MarkdownSecrets
 import ObsidianFiles
@@ -52,7 +46,7 @@ def main():
         "stormycooks.com")
     WPConnection = None
     try:
-        WPConnection = WordpressPosts.WordpressConnection(
+        WPConnection = Wordpress.WordpressConnection(
             WP_SITE_URL,
             WP_USERNAME,
             WP_PASSWORD)
@@ -61,24 +55,12 @@ def main():
         return False
 
 
-    WPPosts = WordpressPosts.WordpressPosts(WPConnection)
+    WPPosts = Wordpress.WordpressPosts(WPConnection)
     
     with open ("./posts.json", 'w') as f:
         f.write(json.dumps(WPPosts.posts, indent=4))
 
 
-    # posts to update
-    #   title, content, status
-    #   update if:
-    #       md5hash is different
-    #       status is different
-    # posts to create
-    #   create if:
-    #       stormycooks.com = True
-    #       and Ofile has no post_id
-    # posts to remove
-    #   remove from wordpress if:
-    #       WPPost has no associated OFile 
 
     # Posts to update
     
@@ -88,44 +70,75 @@ def main():
         post_id = ofile.post_id
         if not post_id in WPPosts.keys():
             continue
+        if not "stormycooks.com" in ofile.frontmatter.keys():
+            continue
+        if ofile.frontmatter["stormycooks.com"]==False:
+            continue
+
         wppost = WPPosts[post_id]
-        #print("================")
-        #print(OFileName)
-        #print("WP Hash: {}".format(wppost.md5hash))
-        #print("Ob Hash: {}".format(ofile.md5hash))
-        #print("WP status: {}".format(wppost.status))
-        #print("Ob status: {}".format(ofile.status))
 
         if not wppost.md5hash == ofile.md5hash or not wppost.status == ofile.status:
-            print("UPDATE ME")
+            print("Updating post {} - {}".format(post_id, ofile.title ))
             wppost.Update(ofile.md5hash, ofile.title, ofile.html, ofile.status)
-    
+
     # Posts to create 
 
-    #for OFileName in OFiles.files:
+    for OFileName in OFiles.files:
 
-    #    
+        oFile = OFiles.files[OFileName]
+        post_id = oFile.post_id
+        if not "stormycooks.com" in ofile.frontmatter.keys():
+            continue
+        if not post_id in WPPosts.keys() and oFile.frontmatter["stormycooks.com"]==True:
+            print("Creating: {}".format(oFile.title))
+            new_post = WPPosts.CreatePost(
+                oFile.md5hash, 
+                oFile.title, 
+                oFile.html, 
+                oFile.status)
+            oFile.post_id = new_post.post_id
+            oFile.save()
 
-    #    ofile = OFiles.files[OFileName]
-    #    post_id = ofile.post_id
-    #    print("================")
-    #    print("OFile:")
-    #    print(OFileName)
-    #    print(ofile.filepath)
-    #    print(post_id)
-    #    print(ofile.md5hash)
-    #    print(ofile.frontmatter["stormycooks.com"])
+    # Posts to remove from WP
+    # 
+    # Leave this commented unless really needed so that we do not 
+    # unintentionally delete posts. 
+    #
+    # Remove WP posts where there is a post_id match and
+    # the stormycooks property is not present ot is unchecked.
+    # AllFiles = ObsidianFiles.ObsidianFiles(MarkdownSecrets.MARKDOWN_DIR, None)
+    # for OFileName in OFiles.files:
+    #     oFile = OFiles.files[OFileName]
+    #     post_id = oFile.post_id
+    #     oFile = OFiles.files[OFileName]
+    #     oFile = OFiles.files[OFileName]
+    #     if post_id in WPPosts.keys():
+    #         if "stormycooks.com" in oFile.frontmatter.keys():
+    #             if oFile.frontmatter["stormycooks.com"] == False:
+    #                 print("Trashing post {} {}".format(post_id, OFileName))
+    #                 WPPosts[post_id].Trash()
 
-    #    print("----------------")
-    #     
-    #    if post_id in WPPosts.keys():
-    #        wppost = WPPosts[post_id]
-    #        print("YES")
-    #        print(wppost.md5hash)
-    #    else:
-    #        print("NO")
+    # inform user about WP posts that do not have 
+    # an associated obsidian file.
+
+    posts_with_no_file = []
+    for wppost_id in WPPosts.keys():
+        idfound = False
+        for oFileName in OFiles.files:
+            file_post_id = OFiles.files[oFileName].post_id
+            if file_post_id == wppost_id:
+                idfound = True
+                continue
+        if not idfound:
+            posts_with_no_file.append(WPPosts[wppost_id])
+    if len(posts_with_no_file) > 0:
+        print("FYI - Posts in WP but not in Obsidian")
+        for post in posts_with_no_file:
+            print("{} - {}".format(post.post_id, post.title))
 
 
-    return True
+
+
+
 
 main()
