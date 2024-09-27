@@ -1,6 +1,5 @@
 import requests
 from requests.auth import HTTPBasicAuth
-#import json
 
 POSTS_API_PATH="wp-json/wp/v2/posts"
 USERS_API_PATH="wp-json/wp/v2/users"

@@ -29,18 +29,16 @@ class ObsidianFiles:
             if of.include:
                 self.files[filename] = of
             self.convert_links()
+        
         return
     
     def convert_links(self):
-
         for OFile in self.files:
-
             pattern = r"\[\[(.*?)\]\]"
             links = re.findall(pattern, self.files[OFile].html)
             for link in links:
                 link_filename = "{}{}".format(link, ".md")
                 if  link_filename in self.files.keys():
-                    # link is good. replace with id based href
                     find = "[[{}]]".format(link)
                     replace_with = "<a href='{url}?p={id}'>{txt}</a>".format(
                             url="/", 
@@ -51,7 +49,6 @@ class ObsidianFiles:
                 else:
                     self.files[OFile].html = self.files[OFile].html.replace(
                         "[[{}]]".format(link), link)
-
         return 
 
 class ObsidianFile:
@@ -99,7 +96,7 @@ class ObsidianFile:
         if "title" in fm.keys():
             title = fm["title"]
         content_plus_title = "{}{}".format(fm.content, title)
-        md5hash = hashlib.md5(content_plus_title.encode('utf-8')).hexdigest() 
+        md5hash = hashlib.md5(content_plus_title.encode('utf-8')).hexdigest()
         return md5hash
 
 
