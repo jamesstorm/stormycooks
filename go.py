@@ -91,6 +91,7 @@ def main():
             continue
         if not post_id in WPPosts.keys() and oFile.frontmatter["stormycooks.com"]==True:
             print("Creating: {}".format(oFile.title))
+            oFile.html = image_magic(oFile.html)
             new_post = WPPosts.CreatePost(
                 oFile.md5hash, 
                 oFile.title, 
@@ -137,7 +138,14 @@ def main():
             print("{} - {}".format(post.post_id, post.title))
 
 
+def image_magic(html):
+    #  ![MainPhoto-445](/Cooking/img/butterchicken-above.png)
+    pattern = r"\[\[(.*?)\]\]"
+    pattern
+    images = re.findall(pattern, html)
+    for image in images:
 
+    return html
 
 
 

@@ -31,7 +31,7 @@ class StormyWordpressConnection:
                 response.json()) 
         except requests.exceptions.HTTPError as e:
             if e.response.status_code == 401:
-                return SmormyWordpressResponse(
+                return StormyWordpressResponse(
                     e.response.status_code, 
                     False, 
                     "Unauthorized - check credentials")
