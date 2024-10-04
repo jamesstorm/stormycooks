@@ -4,6 +4,9 @@ from requests.auth import HTTPBasicAuth
 
 POSTS_API_PATH="wp-json/wp/v2/posts"
 USERS_API_PATH="wp-json/wp/v2/users"
+MEDIA_API_PATH="wp-json/wp/v2/media"
+
+MD5HASH_FIELD_NAME = "_md5hash"
 
 class WordpressResponse:
     def __init__(self, http_response_code, ok, data):
@@ -88,7 +91,7 @@ class WordpressPosts(dict):
         post_data = {
             "title": title, 
             "content": content,
-            "meta": {"md5hash":md5hash},
+            "meta": {MD5HASH_FIELD_NAME:md5hash},
             "status": status  # Can be 'publish', 'draft', etc.
         }
         response = requests.post(
@@ -110,7 +113,7 @@ class WordpressPosts(dict):
 class WordpressPost:
     def __init__(self, wp_post_json, connection):
         self.post_json = wp_post_json
-        self.md5hash = wp_post_json["meta"]["md5hash"]
+        self.md5hash = wp_post_json["meta"][MD5HASH_FIELD_NAME]
         self.title = wp_post_json["title"]
         self.status = wp_post_json["status"]
         self.post_id = wp_post_json["id"]
@@ -132,11 +135,12 @@ class WordpressPost:
         return
 
     def Update(self, md5hash, title, content, status):
+        print("Update: md5hash arg: {}".format(md5hash))
         post_data = {
             "title": title, 
             "content": content,
             "post_id": self.post_id,
-            "meta": {"md5hash":md5hash},
+            "meta": {MD5HASH_FIELD_NAME:md5hash},
             "status": status  # Can be 'publish', 'draft', etc.
         }
         response = requests.post(
