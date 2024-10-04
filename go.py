@@ -1,4 +1,5 @@
 #!python
+import re
 import argparse
 import json
 import Wordpress
@@ -18,6 +19,7 @@ import ObsidianFiles
 # The contents should look like this:
 #
 # MARKDOWN_DIR = "[full path the mardown files]")
+
 
 FORCE_UPDATE_ALL = False 
 
@@ -66,20 +68,21 @@ def main():
     
     for OFileName in OFiles.files:
 
-        ofile = OFiles.files[OFileName]
-        post_id = ofile.post_id
+        oFile = OFiles.files[OFileName]
+        post_id = oFile.post_id
         if not post_id in WPPosts.keys():
             continue
-        if not "stormycooks.com" in ofile.frontmatter.keys():
+        if not "stormycooks.com" in oFile.frontmatter.keys():
             continue
-        if ofile.frontmatter["stormycooks.com"]==False:
+        if oFile.frontmatter["stormycooks.com"]==False:
             continue
 
+        oFile.html = image_magic(oFile.html)
         wppost = WPPosts[post_id]
 
-        if not wppost.md5hash == ofile.md5hash or not wppost.status == ofile.status:
-            print("Updating post {} - {}".format(post_id, ofile.title ))
-            wppost.Update(ofile.md5hash, ofile.title, ofile.html, ofile.status)
+        if not wppost.md5hash == oFile.md5hash or not wppost.status == oFile.status:
+            print("Updating post {} - {}".format(post_id, oFile.title ))
+            wppost.Update(oFile.md5hash, oFile.title, oFile.html, oFile.status)
 
     # Posts to create 
 
@@ -87,7 +90,7 @@ def main():
 
         oFile = OFiles.files[OFileName]
         post_id = oFile.post_id
-        if not "stormycooks.com" in ofile.frontmatter.keys():
+        if not "stormycooks.com" in oFile.frontmatter.keys():
             continue
         if not post_id in WPPosts.keys() and oFile.frontmatter["stormycooks.com"]==True:
             print("Creating: {}".format(oFile.title))
@@ -141,10 +144,9 @@ def main():
 def image_magic(html):
     #  ![MainPhoto-445](/Cooking/img/butterchicken-above.png)
     pattern = r"\[\[(.*?)\]\]"
-    pattern
     images = re.findall(pattern, html)
     for image in images:
-
+        print(image)
     return html
 
 

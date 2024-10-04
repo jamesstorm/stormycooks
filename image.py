@@ -17,9 +17,9 @@ def image_magic(html):
     #  ![MainPhoto|id=1234|400x260](Cooking/img/butterchicken-above.png)
     #pattern = r"!\[(.*?)\[(.*?)\]\]"
     pattern = r"!\[MainPhoto|id=([0-9]*)\]\((.*?)\)"
-    images = re.findall(pattern, html)
-    for image in images:
-        print(image)
+    matches = re.findall(pattern, html)
+    for match in matches:
+        print(match)
     return html
 
 
