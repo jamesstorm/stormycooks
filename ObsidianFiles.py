@@ -5,10 +5,17 @@ import markdown
 import re
 import Wordpress
 
+debug = False
+
+def debug_msg(msg):
+    if debug:
+        print("DEBUG:{}".format(msg))
+    return
 
 class ObsidianFiles:
 
     def __init__(self, directory, required_property=None ):
+        debug_msg("Obs5idianFiles __init__")
         self.root_directoy = directory
         if not os.path.isdir(self.root_directoy):
             raise Exception("Cannot access markdown_dir: {}".
@@ -20,7 +27,11 @@ class ObsidianFiles:
             # ignore directiories
             if os.path.isdir((filepath)): 
                 continue
-
+            # ignore empty files
+            debug_msg("{} {}".format(os.path.getsize(filepath), filename))
+            if os.path.getsize(filepath) == 0:
+                debug_msg("skipping empty file {}".format(filepath))
+                continue
             # ignore files that are not markdown.
             if not filepath.endswith(".md"):
                 continue
@@ -28,13 +39,19 @@ class ObsidianFiles:
             # ignore files that do not have the required_property
             if of.include:
                 self.files[filename] = of
-            self.convert_links()
-        
+        self.convert_links()
+        debug_msg("ObsidianFiles __init__ complete")
         return
-    
+
+        
+
     def convert_links(self):
+        debug_msg("convert_links")
         for OFile in self.files:
+            ofile: ObsidianFile = self.files[OFile]
             pattern = r"\[\[(.*?)\]\]"
+            debug_msg("{} {}".format(ofile.post_id, ofile.filepath))
+            debug_msg("{}".format(len(ofile.html)))
             links = re.findall(pattern, self.files[OFile].html)
             for link in links:
                 link_filename = "{}{}".format(link, ".md")
@@ -49,20 +66,26 @@ class ObsidianFiles:
                 else:
                     self.files[OFile].html = self.files[OFile].html.replace(
                         "[[{}]]".format(link), link)
+        debug_msg("convert_links complete")
         return 
 
 class ObsidianFile:
 
     def __init__(self, filename, filepath, required_property=None):
+        debug_msg("ObdsidianFile __init__ {}".format(filename))
         self.filepath = filepath
+        self.html = "" # default value
         self.include  = False
         self.frontmatter = frontmatter.load(filepath)
         #required_property = None
         self._post_id = None
         if "post_id" in self.frontmatter.keys():
             self.post_id = self.frontmatter["post_id"] 
+        if self.post_id == 625:
+            print(self.frontmatter.keys())
         if not required_property == None:
             if not required_property in self.frontmatter.keys():
+                self.include = True
                 return #bail if the required property is not present
             if self.frontmatter[required_property] == False:
                 self.include = True
