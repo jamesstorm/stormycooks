@@ -11,7 +11,7 @@ def main():
     OFile = ObsidianFiles.ObsidianFile("Butter Chicken.md", '/home/james/Documents/Personal/Cooking/Butter Chicken.md')
 
     
-    HandleImages(OFile)(OFile)
+    HandleImages(OFile)
 
     return
 
@@ -21,7 +21,6 @@ def HandleImages(OFile: ObsidianFiles.ObsidianFile):
     md = OFile.frontmatter.content
     pattern = r"\!\[(.*?)\]\((.*?)\)"
     matches = re.findall(pattern, md)
-    images = []
     images_to_update = []
     images_to_create = []
 
@@ -88,7 +87,7 @@ def HandleImages(OFile: ObsidianFiles.ObsidianFile):
             return False
 
 
-        wpMediaFile = Wordpress.WordpressMediaFile.create_from_upload(
+        wpMediaFile = Wordpress.create_from_upload(
             WPConnection, 
             imagecreate["obsidianimage"].filepath,
             imagecreate["obsidianimage"].md5hash)
@@ -111,7 +110,7 @@ def HandleImages(OFile: ObsidianFiles.ObsidianFile):
         print(obimage.filepath)
 
     
-    return html
+    return 
 
 
 

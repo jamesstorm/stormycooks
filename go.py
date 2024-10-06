@@ -1,4 +1,6 @@
 #!python
+import urllib.parse
+import os
 import re
 import argparse
 import json
@@ -28,7 +30,7 @@ WP_SITE_URL = WordPressSecrets.WP_SITE_URL
 WP_USERNAME = WordPressSecrets.WP_USERNAME
 WP_PASSWORD = WordPressSecrets.WP_PASSWORD
 
-debug = False
+debug = True 
 
 def debug_msg(msg):
     if debug:
@@ -84,30 +86,36 @@ def main():
         if oFile.frontmatter["stormycooks.com"]==False:
             continue
 
-        oFile.html = image_magic(oFile.html)
         wppost = WPPosts[post_id]
-
+        HandleImages(oFile)
         if not wppost.md5hash == oFile.md5hash or not wppost.status == oFile.status:
-            debug_msg("Updating post {} - {}".format(post_id, oFile.title ))
+            debug_msg("Updating post {} - {} - {}".format(post_id, oFile.title, oFile.md5hash ))
             wppost.Update(oFile.md5hash, oFile.title, oFile.html, oFile.status)
 
     # Posts to create 
 
     for OFileName in OFiles.files:
-        debug_msg("create loop: {}".format(OFileName))
+        
+        #debug_msg("create loop: {}".format(OFileName))
 
-        oFile = OFiles.files[OFileName]
+        oFile: ObsidianFiles.ObsidianFile  = OFiles.files[OFileName]
+
         post_id = oFile.post_id
         if not "stormycooks.com" in oFile.frontmatter.keys():
             continue
         if not post_id in WPPosts.keys() and oFile.frontmatter["stormycooks.com"]==True:
-            debug_msg("Creating: {}".format(oFile.title))
-            oFile.html = image_magic(oFile.html)
+            debug_msg(f"{__file__} Creating: {oFile.title} - {oFile.md5hash}")
+            print(f"one======\n{oFile.frontmatter.content}\n=============")
+            HandleImages(oFile)
+            oFile.set_md5_hash()
+            oFile.save()
+            oFile.generate_post_html()
+            print(f"two======\n{oFile.frontmatter.content}\n=============")
+            print(f"B {OFileName} {oFile.md5hash}")
             new_post = WPPosts.CreatePost(
                 oFile.md5hash, 
                 oFile.title, 
-                oFile.html, 
-                oFile.status)
+                oFile.html)
             oFile.post_id = new_post.post_id
             oFile.save()
 
@@ -149,14 +157,106 @@ def main():
             print("{} - {}".format(post.post_id, post.title))
 
 
-def image_magic(html):
-    #  ![MainPhoto-445](/Cooking/img/butterchicken-above.png)
-    pattern = r"\[\[(.*?)\]\]"
-    images = re.findall(pattern, html)
-    for image in images:
-        print(image)
-    return html
 
 
+def dprint(x):
+    show =False
+    if show:
+        print(x)
+
+def HandleImages(OFile: ObsidianFiles.ObsidianFile):
+    md = OFile.frontmatter.content
+    pattern = r"\!\[(.*?)\]\((.*?)\)"
+    matches = re.findall(pattern, md)
+    images_to_update = []
+    images_to_create = []
+
+    issues = []
+    for match in matches:
+        #dprint("===========================")
+        dprint(match)
+        path_in_obsidian_file = urllib.parse.unquote(match[1])
+        filename = os.path.basename(path_in_obsidian_file)
+        purported_file_path = os.path.join(
+            MarkdownSecrets.IMAGE_DIR, 
+            filename
+        )
+        obsidianimage = ObsidianFiles.ObdsidianImage(purported_file_path)
+        if not obsidianimage.exists:
+            issues.append({
+                "img":obsidianimage.filepath, 
+                "message":"image does not exist in the correct directory"})
+            break
+
+        dprint(obsidianimage.md5hash)
+
+        #does the image have an id?
+        id = re.search(r'id=(\d+)', match[0])
+        if id:
+            dprint("bingo {}".format(id.group()))
+            obsidianimage.id = id[0]
+            images_to_update.append({
+                "obsidianimage": obsidianimage,
+            })
+        else:
+            images_to_create.append({
+                "obsidianimage": obsidianimage,
+                "original_wiki_image_Link" : "![{}]({})".format(match[0], match[1]),
+                "new_wiki_image_link": "![{}|id={{id}}]({})".format(match[0],  match[1])
+            })
+    if len(issues) > 0:
+        dprint("IMAGE ISSUES")
+        for issue in issues:
+            dprint(issue)
+        return
+
+    dprint("Images all exist in the correct directory. Continuing")
+
+    dprint("\n\n\nImages to create in Wordpress")
+    dprint("=============================")
+    for imagecreate in images_to_create:
+        obimage: ObsidianFiles.ObdsidianImage = imagecreate["obsidianimage"]
+        dprint(imagecreate["obsidianimage"].filepath)
+        dprint(imagecreate["original_wiki_image_Link"])
+        dprint(imagecreate["new_wiki_image_link"])
+        dprint("---------------------------------------")
+
+        
+
+        WPConnection = None
+        try:
+            WPConnection = Wordpress.WordpressConnection(
+                WordPressSecrets.WP_SITE_URL,
+                WordPressSecrets.WP_USERNAME,
+                WordPressSecrets.WP_PASSWORD)
+        except Exception as e:
+            dprint(e)
+            return False
+
+
+        wpMediaFile = Wordpress.create_from_upload(
+            WPConnection, 
+            imagecreate["obsidianimage"].filepath,
+            imagecreate["obsidianimage"].md5hash)
+
+        if wpMediaFile == None:
+            raise Exception("upload did nay work")
+        imagecreate["new_wiki_image_link"] = imagecreate["new_wiki_image_link"].format(id=wpMediaFile.id)
+        OFile.frontmatter.content = OFile.frontmatter.content.replace(
+            imagecreate["original_wiki_image_Link"], 
+            imagecreate["new_wiki_image_link"])
+        OFile.save()
+
+
+    dprint("\n\n\nImages to update in wordpress - if hash is different")
+    dprint("=============================")
+    for imageupdate in images_to_update:
+        obimage: ObsidianFiles.ObdsidianImage = imageupdate["obsidianimage"]
+        dprint("---------------------------------------")
+        dprint(obimage.id)
+        dprint(obimage.filepath)
+
+    
+    return 
 
 main()

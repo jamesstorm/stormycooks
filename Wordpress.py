@@ -59,49 +59,49 @@ class WordpressMediaFile:
     def load(self):
 
         return
-
-    def create_from_upload(wpconnection, filepath, md5hash):
-        print(1)
-        url = "{}/{}".format(wpconnection.site_url, MEDIA_API_PATH)
-        # Read the file in binary mode
-        with open(filepath, 'rb') as file:
-            file_data = {
-                'file': file
+def create_from_upload(wpconnection: WordpressConnection, filepath, md5hash):
+    print(1)
+    url = "{}/{}".format(wpconnection.site_url, MEDIA_API_PATH)
+    # Read the file in binary mode
+    with open(filepath, 'rb') as file:
+        file_data = {
+            'file': file
+        }
+        # Prepare the headers for the request
+        headers = {
+            'Content-Disposition': f'attachment; filename={filepath.split("/")[-1]}',
+        }
+        # Make the POST request to upload the file
+        response = requests.post(
+            url,
+            headers=headers,
+            files={'file': file},
+            auth=HTTPBasicAuth(wpconnection.username, wpconnection.password)
+        )
+        if response.status_code == 201:
+            media_data = response.json()
+            media_id = media_data['id']
+            url = f"{url}/{media_id}"
+            meta_payload = {
+                "meta":{MD5HASH_FIELD_NAME:md5hash}
             }
-            # Prepare the headers for the request
-            headers = {
-                'Content-Disposition': f'attachment; filename={filepath.split("/")[-1]}',
-            }
-            # Make the POST request to upload the file
-            response = requests.post(
+            update_response = requests.post(
                 url,
-                headers=headers,
-                files={'file': file},
-                auth=HTTPBasicAuth(wpconnection.username, wpconnection.password)
+                headers={"Content-Type": "application/json"},
+                auth=HTTPBasicAuth(wpconnection.username, wpconnection.password),
+                data=json.dumps(meta_payload)
             )
-            if response.status_code == 201:
-                media_data = response.json()
-                media_id = media_data['id']
-                url = f"{url}/{media_id}"
-                meta_payload = {
-                    "meta":{MD5HASH_FIELD_NAME:md5hash}
-                }
-                update_response = requests.post(
-                    url,
-                    headers={"Content-Type": "application/json"},
-                    auth=HTTPBasicAuth(wpconnection.username, wpconnection.password),
-                    data=json.dumps(meta_payload)
-                )
 
-                if update_response.status_code == 200:
-                    print("Metadata updated successfully!")
-                    return WordpressMediaFile(media_id, md5hash)
-                else:
-                    print("Failed to update metadata.", update_response.text)
-                    return None
+            if update_response.status_code == 200:
+                print("Metadata updated successfully!")
+                return WordpressMediaFile(media_id, md5hash)
             else:
-                print("File upload failed.", response.text)
+                print("Failed to update metadata.", update_response.text)
                 return None
+        else:
+            print("File upload failed.", response.text)
+            return None
+
 
 
 class WordpressResponse:

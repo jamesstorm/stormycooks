@@ -3,7 +3,7 @@ import frontmatter
 import hashlib
 import markdown
 import re
-import Wordpress
+#import Wordpress
 
 debug = False
 
@@ -17,7 +17,7 @@ class ObdsidianImage():
     exists = False
     filepath = ""
     md5hash = None
-    id = None
+    _id = None
 
     def __init__(self, filepath):
         self.filepath = filepath
@@ -29,6 +29,13 @@ class ObdsidianImage():
         self.md5hash = compute_md5(self.filepath)
         return
 
+    @property
+    def id(self):
+        return self._id
+
+    @id.setter
+    def id(self, value):
+        self._id = value
 
 
 
@@ -111,7 +118,9 @@ class ObsidianFile:
                 return #bail if the required property is False
         
         self.filename = filename
-        self.md5hash = self.generate_md5hash_from_fm(self.frontmatter)
+        #self.md5hash = self.generate_md5hash_from_fm(self.frontmatter)
+        self.md5hash = None
+        self.set_md5_hash()
         self.title = self.filename.replace(".md", "")
         if "title" in self.frontmatter.keys():
             self.title = self.frontmatter["title"]
@@ -133,13 +142,23 @@ class ObsidianFile:
         self._post_id = value
         self.frontmatter["post_id"] = value
 
-    def generate_md5hash_from_fm(self, fm):
+    def set_md5_hash(self):
         title = ""
-        if "title" in fm.keys():
-            title = fm["title"]
-        content_plus_title = "{}{}".format(fm.content, title)
+        if "title" in self.frontmatter.keys():
+            title = self.frontmatter["title"]
+        content_plus_title = "{}{}".format(self.frontmatter.content, title)
         md5hash = hashlib.md5(content_plus_title.encode('utf-8')).hexdigest()
-        return md5hash
+        self.md5hash = md5hash
+        return
+
+    #def generate_md5hash_from_fm(self, fm):
+    #    title = ""
+    #    if "title" in fm.keys():
+    #        title = fm["title"]
+    #    content_plus_title = "{}{}".format(fm.content, title)
+    #    md5hash = hashlib.md5(content_plus_title.encode('utf-8')).hexdigest()
+    #    self.md5hash = md5hash
+    #    return md5hash
 
 
     def save(self):
@@ -152,13 +171,14 @@ class ObsidianFile:
         md_content = re.sub(markdown_callout_pattern, "", md_content)
         #images
         pattern = r'(!\[.*?id=(\d+).*?\]\(.*?\))'
-        result = re.findall(pattern, self.frontmatter.content)
+        result = re.findall(pattern, md_content)
         for r in result:
-            print("hello")
+            print("bing")
             md_content = md_content.replace(r[0], 
                     f"![x](https://wordpress.stormycooks.com/?page_id={r[1]})")
 
         html = markdown.markdown(md_content, extentions=['markdown_captions'])
+        self.html = html
         return html
 
 
