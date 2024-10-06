@@ -90,8 +90,17 @@ def main():
         HandleImages(oFile)
         oFile.generate_post_html()
         if not wppost.md5hash == oFile.md5hash or not wppost.wpstatus == oFile.wpstatus:
-            debug_msg("Updating post {} - {} - {}".format(post_id, oFile.title, oFile.md5hash ))
-            wppost.Update(oFile.md5hash, oFile.title, oFile.html, oFile.wpstatus)
+            
+            debug_msg("Updating post {} - {} - {}".format(
+                post_id, 
+                oFile.title, 
+                oFile.md5hash ))
+            wppost.Update(
+                oFile.md5hash, 
+                oFile.title, 
+                oFile.html, 
+                oFile.wpstatus,
+                oFile.featured_image,)
 
     # Posts to create 
 
@@ -114,7 +123,8 @@ def main():
                 oFile.md5hash,
                 oFile.title,
                 oFile.html,
-                oFile.wpstatus)
+                oFile.wpstatus,
+                oFile.featured_image)
             oFile.post_id = new_post.post_id
             oFile.save()
 
@@ -159,7 +169,7 @@ def main():
 
 
 def dprint(x):
-    show =True
+    show =False
     if show:
         print(x)
 
@@ -189,32 +199,51 @@ def HandleImages(OFile: ObsidianFiles.ObsidianFile):
 
         dprint(obsidianimage.md5hash)
 
+        
+
         #does the image have an id?
         id = re.search(r'id=(\d+)', match[0])
         if id:
-            dprint(f"bingo this image link has an id {id[0]}")
-            obsidianimage.id = id[0]
+            dprint(f"bingo this image link has an id {id[1]}")
+            obsidianimage.id = id[1]
             images_to_update.append({
                 "obsidianimage": obsidianimage,
             })
         else:
             images_to_create.append({
                 "obsidianimage": obsidianimage,
-                "original_wiki_image_Link" : "![{}]({})".format(match[0], match[1]),
-                "new_wiki_image_link": "![{}|id={{id}}]({})".format(match[0],  match[1])
+                "original_wiki_image_Link" : f"![{match[0]}]({match[1]})",
+                "new_wiki_image_link": f"![{match[0]}|id={{id}}]({match[1]})"
             })
+
+
+        # Is this the FeaturedImage? If so, set it. 
+        typepmatch = re.search(r'type=FeaturedImage', match[0])
+        if typepmatch:
+            OFile.featured_image=obsidianimage.id
+
     if len(issues) > 0:
         dprint("IMAGE ISSUES")
         for issue in issues:
             dprint(issue)
         return
 
+    WPConnection = None
+    try:
+        WPConnection = Wordpress.WordpressConnection(
+            WordPressSecrets.WP_SITE_URL,
+            WordPressSecrets.WP_USERNAME,
+            WordPressSecrets.WP_PASSWORD)
+    except Exception as e:
+        dprint(e)
+        return False
+
     dprint("Images all exist in the correct directory. Continuing")
 
     dprint("\n\n\nImages to create in Wordpress")
     dprint("=============================")
     for imagecreate in images_to_create:
-        obimage: ObsidianFiles.ObdsidianImage = imagecreate["obsidianimage"]
+        #obimage: ObsidianFiles.ObdsidianImage = imagecreate["obsidianimage"]
         dprint(imagecreate["obsidianimage"].filepath)
         dprint(imagecreate["original_wiki_image_Link"])
         dprint(imagecreate["new_wiki_image_link"])
@@ -222,15 +251,6 @@ def HandleImages(OFile: ObsidianFiles.ObsidianFile):
 
         
 
-        WPConnection = None
-        try:
-            WPConnection = Wordpress.WordpressConnection(
-                WordPressSecrets.WP_SITE_URL,
-                WordPressSecrets.WP_USERNAME,
-                WordPressSecrets.WP_PASSWORD)
-        except Exception as e:
-            dprint(e)
-            return False
 
 
         wpMediaFile = Wordpress.WordpressMediaFile_from_file(
@@ -246,16 +266,25 @@ def HandleImages(OFile: ObsidianFiles.ObsidianFile):
             imagecreate["new_wiki_image_link"])
         OFile.save()
 
+    # Turns out there is no way (in stock Wordpress) to update 
+    # the media file for a media/attachment item. 
+    #dprint("\n\n\nImages to update in wordpress - if hash is different")
+    #dprint("=============================")
+    #for imageupdate in images_to_update:
+    #    obimage: ObsidianFiles.ObdsidianImage = imageupdate["obsidianimage"]
+    #    dprint("---------------------------------------")
+    #    dprint(obimage.id)
+    #    dprint(obimage.filepath)
+    #    wp_image = Wordpress.WordpressMediaFile_from_id(WPConnection, obimage.id)
+    #    dprint(f"ob {obimage.id}: {obimage.md5hash} ")
+    #    dprint(f"wp {wp_image.id}: {wp_image.md5hash} ")
+    #    if wp_image.exists_on_wordpress and not wp_image.md5hash == obimage.md5hash:
+    #        dprint(f"Updating media: {obimage.id} with {obimage.filepath}")
+    #        wp_image.update_media_file(WPConnection, obimage.filepath, obimage.md5hash)
+    #    else:
+    #        dprint(f"NOT updating {obimage.id} {obimage.filepath} because md5 is not changed")
 
-    dprint("\n\n\nImages to update in wordpress - if hash is different")
-    dprint("=============================")
-    for imageupdate in images_to_update:
-        obimage: ObsidianFiles.ObdsidianImage = imageupdate["obsidianimage"]
-        dprint("---------------------------------------")
-        dprint(obimage.id)
-        dprint(obimage.filepath)
-
-    
+    #
     return 
 
 main()

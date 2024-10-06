@@ -98,7 +98,6 @@ class ObsidianFiles:
         return 
 
 class ObsidianFile:
-
     def __init__(self, filename, filepath, required_property=None):
         debug_msg("ObdsidianFile __init__ {}".format(filename))
         self.filepath = filepath
@@ -107,6 +106,7 @@ class ObsidianFile:
         self.frontmatter = frontmatter.load(filepath)
         #required_property = None
         self._post_id = None
+        self._featured_image: str = "" 
         if "post_id" in self.frontmatter.keys():
             self.post_id = self.frontmatter["post_id"] 
         if not required_property == None:
@@ -125,13 +125,22 @@ class ObsidianFile:
             self.title = self.frontmatter["title"]
         if not "wp_status" in self.frontmatter.keys():
             self.frontmatter["wp_status"] = "draft"
-            #self.save()
-        self.wpstatus: str = self.frontmatter["wp_status"]
+            #self.save():Warning()
+        self.wpstatus = "" 
+        self.wpstatus = self.frontmatter["wp_status"]
         self.html = self.generate_post_html()
 
         if required_property == None or required_property in self.frontmatter.keys():
             self.include = True
 
+    @property
+    def featured_image(self):
+        return self._featured_image
+
+    @featured_image.setter
+    def featured_image(self, value):
+        self._featured_image = value
+    
     @property
     def post_id(self):
         return self._post_id

@@ -58,7 +58,56 @@ class WordpressMediaFile:
         self.title = title
         return
 
-def WordpressMediaFile_from_id(wpconnection: WordpressConnection, id: int):
+    def update_media_file(self, wpconnection, filepath, md5hash):
+        print(f"{__file__} update_media_file")
+        url = "{}/{}/{}".format(wpconnection.site_url, MEDIA_API_PATH, self.id)
+        print(f"filepath: {filepath}")
+        print(f"md5hash: {md5hash}")
+        print(f"url: {url}")
+        # Read the file in binary mode
+        #with open(filepath, 'rb') as file:
+        # Prepare the headers for the request
+        headers = {
+            'Content-Disposition': f'attachment; filename={filepath.split("/")[-1]}',
+        }
+        # Make the POST request to upload the file
+        response = requests.put(
+            url,
+            headers=headers,
+            data=open(filepath, 'rb'),
+            auth=HTTPBasicAuth(wpconnection.username, wpconnection.password)
+        )
+        print(f"response code: {response.status_code}")
+        if response.status_code == 200:
+            media_data = response.json()
+            media_id = media_data['id']
+            
+            meta_payload = {
+                "meta":{MD5HASH_FIELD_NAME:md5hash},
+                "title":"foobar"
+            }
+            update_response = requests.post(
+                url,
+                headers={"Content-Type": "application/json"},
+                auth=HTTPBasicAuth(wpconnection.username, wpconnection.password),
+                data=json.dumps(meta_payload)
+            )
+
+            if update_response.status_code == 200:
+                print("Media file metadata updated successfully!")
+                return WordpressMediaFile(media_id, md5hash)
+            else:
+                print("Failed to update metadata.", update_response.text)
+                return None
+        else:
+            print(f"File upload failed. {response.status_code}")
+            return None
+
+
+
+        return
+
+def WordpressMediaFile_from_id(wpconnection: WordpressConnection, id):
     
     url = f"{wpconnection.site_url}/{MEDIA_API_PATH}/{id}"
 
@@ -68,6 +117,7 @@ def WordpressMediaFile_from_id(wpconnection: WordpressConnection, id: int):
             url, 
             auth=HTTPBasicAuth(wpconnection.username, wpconnection.password))
         response.raise_for_status()
+        print(f"md5 = {response.json()["md5hash"]}")
         return WordpressMediaFile (
             id=id, 
             md5hash=response.json()["md5hash"], 
@@ -78,7 +128,7 @@ def WordpressMediaFile_from_id(wpconnection: WordpressConnection, id: int):
         if e.response.status_code == 401:
             raise Exception("Unauthorized - check credentials", e)
         if e.response.status_code == 404:
-            return WordpressMediaFile(id, "", False)
+            return WordpressMediaFile(id, "foo", False)
         else:
             raise Exception(
                 "HTTPError when testing Wordpress connection", e)
@@ -171,13 +221,14 @@ class WordpressPosts(dict):
             self[post["id"]] = WordpressPost(post, self.connection)
 
 
-    def CreatePost(self, md5hash, title, content, wpstatus="draft"):
+    def CreatePost(self, md5hash, title, content, wpstatus, featured_media=None):
         
         post_data = {
-            "title": title, 
+            "title": title,
             "content": content,
             "meta": {MD5HASH_FIELD_NAME:md5hash},
-            "status": wpstatus  # Can be 'publish', 'draft', etc.
+            "status": str(wpstatus),  # Can be 'publish', 'draft', etc.
+            "featured_media": featured_media
         }
         response = requests.post(
             "{}/{}".format(self.connection.site_url, 
@@ -203,6 +254,7 @@ class WordpressPost:
         self.wpstatus = wp_post_json["status"]
         self.post_id = wp_post_json["id"]
         self.connection = connection
+        
         return
 
     def Trash(self):
@@ -219,14 +271,15 @@ class WordpressPost:
 
         return response
 
-    def Update(self, md5hash, title, content, wpstatus):
+    def Update(self, md5hash, title, content, wpstatus, featured_media=None):
         print("Update: md5hash arg: {}".format(md5hash))
         post_data = {
             "title": title, 
             "content": content,
             "post_id": self.post_id,
             "meta": {MD5HASH_FIELD_NAME:md5hash},
-            "status": wpstatus  # Can be 'publish', 'draft', etc.
+            "status": wpstatus,  # Can be 'publish', 'draft', etc.
+            "featured_media": featured_media
         }
         response = requests.post(
             "{}/{}/{}".format(self.connection.site_url, 
