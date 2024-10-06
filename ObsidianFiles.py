@@ -118,7 +118,6 @@ class ObsidianFile:
                 return #bail if the required property is False
         
         self.filename = filename
-        #self.md5hash = self.generate_md5hash_from_fm(self.frontmatter)
         self.md5hash = None
         self.set_md5_hash()
         self.title = self.filename.replace(".md", "")

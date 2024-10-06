@@ -88,8 +88,6 @@ def main():
 
         wppost = WPPosts[post_id]
         HandleImages(oFile)
-        #oFile.set_md5_hash()
-        #oFile.save()
         oFile.generate_post_html()
         if not wppost.md5hash == oFile.md5hash or not wppost.status == oFile.status:
             debug_msg("Updating post {} - {} - {}".format(post_id, oFile.title, oFile.md5hash ))
@@ -118,7 +116,8 @@ def main():
             new_post = WPPosts.CreatePost(
                 oFile.md5hash, 
                 oFile.title, 
-                oFile.html)
+                oFile.html,
+                oFile.status)
             oFile.post_id = new_post.post_id
             oFile.save()
 
