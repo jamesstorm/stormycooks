@@ -126,7 +126,7 @@ class ObsidianFile:
         if not "wp_status" in self.frontmatter.keys():
             self.frontmatter["wp_status"] = "draft"
             #self.save()
-        self.status = self.frontmatter["wp_status"]
+        self.wpstatus = self.frontmatter["wp_status"]
         self.html = self.generate_post_html()
 
         if required_property == None or required_property in self.frontmatter.keys():
@@ -175,7 +175,7 @@ class ObsidianFile:
             md_content = md_content.replace(r[0], 
                     f"![x](/?page_id={r[1]})")
 
-        html = markdown.markdown(md_content, xxxextensions=['markdown_captions'])
+        html = markdown.markdown(md_content)
         self.html = html
         return html
 

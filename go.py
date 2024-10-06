@@ -30,7 +30,7 @@ WP_SITE_URL = WordPressSecrets.WP_SITE_URL
 WP_USERNAME = WordPressSecrets.WP_USERNAME
 WP_PASSWORD = WordPressSecrets.WP_PASSWORD
 
-debug = True 
+debug = False 
 
 def debug_msg(msg):
     if debug:
@@ -89,9 +89,9 @@ def main():
         wppost = WPPosts[post_id]
         HandleImages(oFile)
         oFile.generate_post_html()
-        if not wppost.md5hash == oFile.md5hash or not wppost.status == oFile.status:
+        if not wppost.md5hash == oFile.md5hash or not wppost.wpstatus == oFile.wpstatus:
             debug_msg("Updating post {} - {} - {}".format(post_id, oFile.title, oFile.md5hash ))
-            wppost.Update(oFile.md5hash, oFile.title, oFile.html, oFile.status)
+            wppost.Update(oFile.md5hash, oFile.title, oFile.html, oFile.wpstatus)
 
     # Posts to create 
 
@@ -106,18 +106,15 @@ def main():
             continue
         if not post_id in WPPosts.keys() and oFile.frontmatter["stormycooks.com"]==True:
             debug_msg(f"{__file__} Creating: {oFile.title} - {oFile.md5hash}")
-            print(f"one======\n{oFile.frontmatter.content}\n=============")
             HandleImages(oFile)
             oFile.set_md5_hash()
             oFile.save()
             oFile.generate_post_html()
-            print(f"two======\n{oFile.frontmatter.content}\n=============")
-            print(f"B {OFileName} {oFile.md5hash}")
             new_post = WPPosts.CreatePost(
-                oFile.md5hash, 
-                oFile.title, 
+                oFile.md5hash,
+                oFile.title,
                 oFile.html,
-                oFile.status)
+                oFile.wpstatus)
             oFile.post_id = new_post.post_id
             oFile.save()
 

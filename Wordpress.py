@@ -40,9 +40,6 @@ class WordpressConnection:
         except requests.RequestException as e:
             raise Exception(
                 "Request exception while testing Wordpress Connection", e )
-        except requests.exceptions.ConnectionError as e:
-            raise Exception(
-                "ConnectionError while testing Wordpress Connection", e )
 
 
 
@@ -56,17 +53,14 @@ class WordpressMediaFile:
         return
 
 
-    def load(self):
-
-        return
 def create_from_upload(wpconnection: WordpressConnection, filepath, md5hash):
     print(1)
     url = "{}/{}".format(wpconnection.site_url, MEDIA_API_PATH)
     # Read the file in binary mode
     with open(filepath, 'rb') as file:
-        file_data = {
-            'file': file
-        }
+        #file_data = {
+        #    'file': file
+        #}
         # Prepare the headers for the request
         headers = {
             'Content-Disposition': f'attachment; filename={filepath.split("/")[-1]}',
@@ -93,7 +87,7 @@ def create_from_upload(wpconnection: WordpressConnection, filepath, md5hash):
             )
 
             if update_response.status_code == 200:
-                print("Metadata updated successfully!")
+                print("Media file metadata updated successfully!")
                 return WordpressMediaFile(media_id, md5hash)
             else:
                 print("Failed to update metadata.", update_response.text)
@@ -145,13 +139,13 @@ class WordpressPosts(dict):
             self[post["id"]] = WordpressPost(post, self.connection)
 
 
-    def CreatePost(self, md5hash, title, content, status="draft"):
+    def CreatePost(self, md5hash, title, content, wpstatus="draft"):
         
         post_data = {
             "title": title, 
             "content": content,
             "meta": {MD5HASH_FIELD_NAME:md5hash},
-            "status": status  # Can be 'publish', 'draft', etc.
+            "status": wpstatus  # Can be 'publish', 'draft', etc.
         }
         response = requests.post(
             "{}/{}".format(self.connection.site_url, 
@@ -174,7 +168,7 @@ class WordpressPost:
         self.post_json = wp_post_json
         self.md5hash = wp_post_json["meta"][MD5HASH_FIELD_NAME]
         self.title = wp_post_json["title"]
-        self.status = wp_post_json["status"]
+        self.wpstatus = wp_post_json["status"]
         self.post_id = wp_post_json["id"]
         self.connection = connection
         return
@@ -191,16 +185,16 @@ class WordpressPost:
             auth=HTTPBasicAuth(self.connection.username, 
                                self.connection.password))
 
-        return
+        return response
 
-    def Update(self, md5hash, title, content, status):
+    def Update(self, md5hash, title, content, wpstatus):
         print("Update: md5hash arg: {}".format(md5hash))
         post_data = {
             "title": title, 
             "content": content,
             "post_id": self.post_id,
             "meta": {MD5HASH_FIELD_NAME:md5hash},
-            "status": status  # Can be 'publish', 'draft', etc.
+            "status": wpstatus  # Can be 'publish', 'draft', etc.
         }
         response = requests.post(
             "{}/{}/{}".format(self.connection.site_url, 
@@ -211,4 +205,5 @@ class WordpressPost:
             auth=HTTPBasicAuth(self.connection.username, 
                                self.connection.password)
         )
+        return response
         
