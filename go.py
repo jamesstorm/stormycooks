@@ -97,9 +97,9 @@ def main():
 
     for OFileName in OFiles.files:
         
-        #debug_msg("create loop: {}".format(OFileName))
-
-        oFile: ObsidianFiles.ObsidianFile  = OFiles.files[OFileName]
+        debug_msg("create loop: {}".format(OFileName))
+        oFile: ObsidianFiles.ObsidianFile
+        oFile = OFiles.files[OFileName]
 
         post_id = oFile.post_id
         if not "stormycooks.com" in oFile.frontmatter.keys():
@@ -110,6 +110,7 @@ def main():
             oFile.set_md5_hash()
             oFile.save()
             oFile.generate_post_html()
+            s: str = oFile.wpstatus
             new_post = WPPosts.CreatePost(
                 oFile.md5hash,
                 oFile.title,

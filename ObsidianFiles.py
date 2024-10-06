@@ -126,7 +126,7 @@ class ObsidianFile:
         if not "wp_status" in self.frontmatter.keys():
             self.frontmatter["wp_status"] = "draft"
             #self.save()
-        self.wpstatus = self.frontmatter["wp_status"]
+        self.wpstatus: str = self.frontmatter["wp_status"]
         self.html = self.generate_post_html()
 
         if required_property == None or required_property in self.frontmatter.keys():
