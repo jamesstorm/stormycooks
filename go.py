@@ -88,6 +88,9 @@ def main():
 
         wppost = WPPosts[post_id]
         HandleImages(oFile)
+        #oFile.set_md5_hash()
+        #oFile.save()
+        oFile.generate_post_html()
         if not wppost.md5hash == oFile.md5hash or not wppost.status == oFile.status:
             debug_msg("Updating post {} - {} - {}".format(post_id, oFile.title, oFile.md5hash ))
             wppost.Update(oFile.md5hash, oFile.title, oFile.html, oFile.status)
@@ -160,7 +163,7 @@ def main():
 
 
 def dprint(x):
-    show =False
+    show =True
     if show:
         print(x)
 
@@ -193,7 +196,7 @@ def HandleImages(OFile: ObsidianFiles.ObsidianFile):
         #does the image have an id?
         id = re.search(r'id=(\d+)', match[0])
         if id:
-            dprint("bingo {}".format(id.group()))
+            dprint(f"bingo this image link has an id {id[0]}")
             obsidianimage.id = id[0]
             images_to_update.append({
                 "obsidianimage": obsidianimage,

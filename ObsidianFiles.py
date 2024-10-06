@@ -173,11 +173,10 @@ class ObsidianFile:
         pattern = r'(!\[.*?id=(\d+).*?\]\(.*?\))'
         result = re.findall(pattern, md_content)
         for r in result:
-            print("bing")
             md_content = md_content.replace(r[0], 
-                    f"![x](https://wordpress.stormycooks.com/?page_id={r[1]})")
+                    f"![x](/?page_id={r[1]})")
 
-        html = markdown.markdown(md_content, extentions=['markdown_captions'])
+        html = markdown.markdown(md_content, xxxextensions=['markdown_captions'])
         self.html = html
         return html
 
