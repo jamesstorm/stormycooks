@@ -110,7 +110,6 @@ def main():
             oFile.set_md5_hash()
             oFile.save()
             oFile.generate_post_html()
-            s: str = oFile.wpstatus
             new_post = WPPosts.CreatePost(
                 oFile.md5hash,
                 oFile.title,
@@ -234,7 +233,7 @@ def HandleImages(OFile: ObsidianFiles.ObsidianFile):
             return False
 
 
-        wpMediaFile = Wordpress.create_from_upload(
+        wpMediaFile = Wordpress.WordpressMediaFile_from_file(
             WPConnection, 
             imagecreate["obsidianimage"].filepath,
             imagecreate["obsidianimage"].md5hash)

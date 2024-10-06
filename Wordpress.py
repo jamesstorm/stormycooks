@@ -15,6 +15,7 @@ class WordpressConnection:
         self.site_url = site_url
         self.username = username
         self.password = password
+        self.ok = False
         self.test()
 
     def test(self): 
@@ -24,6 +25,7 @@ class WordpressConnection:
                 url, 
                 auth=HTTPBasicAuth(self.username, self.password))
             response.raise_for_status()
+            self.ok = True
             return WordpressResponse(
                 response.status_code, 
                 response.ok, 
@@ -47,14 +49,44 @@ class WordpressConnection:
 class WordpressMediaFile:
     id = None
     md5hash = None
-    def __init__(self, id: int, md5hash: str):
+    exists_on_wordpress = None
+    title = None
+    def __init__(self, id: int, md5hash: str, exists_on_wordpress=False, title=""):
         self.id = id
         self.md5hash = md5hash
+        self.exists_on_wordpress = exists_on_wordpress
+        self.title = title
         return
 
+def WordpressMediaFile_from_id(wpconnection: WordpressConnection, id: int):
+    
+    url = f"{wpconnection.site_url}/{MEDIA_API_PATH}/{id}"
 
-def create_from_upload(wpconnection: WordpressConnection, filepath, md5hash):
-    print(1)
+    print(url)
+    try:
+        response = requests.get(
+            url, 
+            auth=HTTPBasicAuth(wpconnection.username, wpconnection.password))
+        response.raise_for_status()
+        return WordpressMediaFile (
+            id=id, 
+            md5hash=response.json()["md5hash"], 
+            exists_on_wordpress=True, 
+            title=response.json()["title"])
+
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 401:
+            raise Exception("Unauthorized - check credentials", e)
+        if e.response.status_code == 404:
+            return WordpressMediaFile(id, "", False)
+        else:
+            raise Exception(
+                "HTTPError when testing Wordpress connection", e)
+    except requests.RequestException as e:
+        raise Exception(
+            "Request exception while testing Wordpress Connection", e )
+
+def WordpressMediaFile_from_file(wpconnection: WordpressConnection, filepath, md5hash):
     url = "{}/{}".format(wpconnection.site_url, MEDIA_API_PATH)
     # Read the file in binary mode
     with open(filepath, 'rb') as file:

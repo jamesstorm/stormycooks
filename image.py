@@ -87,7 +87,7 @@ def HandleImages(OFile: ObsidianFiles.ObsidianFile):
             return False
 
 
-        wpMediaFile = Wordpress.create_from_upload(
+        wpMediaFile = Wordpress.WordpressMediaFile_from_file(
             WPConnection, 
             imagecreate["obsidianimage"].filepath,
             imagecreate["obsidianimage"].md5hash)
