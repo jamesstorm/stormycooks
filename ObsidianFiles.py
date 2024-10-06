@@ -12,6 +12,27 @@ def debug_msg(msg):
         print("DEBUG:{}".format(msg))
     return
 
+class ObdsidianImage():
+    
+    exists = False
+    filepath = ""
+    md5hash = None
+    id = None
+
+    def __init__(self, filepath):
+        self.filepath = filepath
+        if not os.path.isfile(filepath):
+            return
+        
+        self.exists = True
+        
+        self.md5hash = compute_md5(self.filepath)
+        return
+
+
+
+
+
 class ObsidianFiles:
 
     def __init__(self, directory, required_property=None ):
@@ -81,8 +102,6 @@ class ObsidianFile:
         self._post_id = None
         if "post_id" in self.frontmatter.keys():
             self.post_id = self.frontmatter["post_id"] 
-        if self.post_id == 625:
-            print(self.frontmatter.keys())
         if not required_property == None:
             if not required_property in self.frontmatter.keys():
                 self.include = True
@@ -131,8 +150,32 @@ class ObsidianFile:
         md_content = self.frontmatter.content
         markdown_callout_pattern = r'> *\[!My Notes\].*(\n>.*)*'
         md_content = re.sub(markdown_callout_pattern, "", md_content)
+        #images
+        pattern = r'(!\[.*?id=(\d+).*?\]\(.*?\))'
+        result = re.findall(pattern, self.frontmatter.content)
+        for r in result:
+            print("hello")
+            md_content = md_content.replace(r[0], 
+                    f"![x](https://wordpress.stormycooks.com/?page_id={r[1]})")
+
         html = markdown.markdown(md_content, extentions=['markdown_captions'])
         return html
+
+
+
+
+def compute_md5(filepath, chunk_size=4096):
+    # Initialize the md5 hash object
+    md5_hash = hashlib.md5()
+    
+    # Open the file in binary mode
+    with open(filepath, "rb") as f:
+        # Read the file in chunks and update the hash
+        for chunk in iter(lambda: f.read(chunk_size), b""):
+            md5_hash.update(chunk)
+    
+    # Return the hexadecimal MD5 hash
+    return md5_hash.hexdigest()
             
 
 

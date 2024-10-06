@@ -2,6 +2,7 @@
 import re
 import argparse
 import json
+import sys
 import Wordpress
 import WordPressSecrets
 import MarkdownSecrets
@@ -27,7 +28,12 @@ WP_SITE_URL = WordPressSecrets.WP_SITE_URL
 WP_USERNAME = WordPressSecrets.WP_USERNAME
 WP_PASSWORD = WordPressSecrets.WP_PASSWORD
 
+debug = False
 
+def debug_msg(msg):
+    if debug:
+        print("DEBUG {}:\n{}".format(sys.argv[0], msg))
+    return
 
 
 parser = argparse.ArgumentParser()
@@ -56,6 +62,7 @@ def main():
         print(e)
         return False
 
+    
 
     WPPosts = Wordpress.WordpressPosts(WPConnection)
     
@@ -81,19 +88,20 @@ def main():
         wppost = WPPosts[post_id]
 
         if not wppost.md5hash == oFile.md5hash or not wppost.status == oFile.status:
-            print("Updating post {} - {}".format(post_id, oFile.title ))
+            debug_msg("Updating post {} - {}".format(post_id, oFile.title ))
             wppost.Update(oFile.md5hash, oFile.title, oFile.html, oFile.status)
 
     # Posts to create 
 
     for OFileName in OFiles.files:
+        debug_msg("create loop: {}".format(OFileName))
 
         oFile = OFiles.files[OFileName]
         post_id = oFile.post_id
         if not "stormycooks.com" in oFile.frontmatter.keys():
             continue
         if not post_id in WPPosts.keys() and oFile.frontmatter["stormycooks.com"]==True:
-            print("Creating: {}".format(oFile.title))
+            debug_msg("Creating: {}".format(oFile.title))
             oFile.html = image_magic(oFile.html)
             new_post = WPPosts.CreatePost(
                 oFile.md5hash, 
