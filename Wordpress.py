@@ -126,7 +126,33 @@ class WordpressPosts(dict):
                 'per_page': per_page,
                 'page':page,
                 'status': 'publish,draft'}
-            response = requests.get(url, params, auth=HTTPBasicAuth(
+          # Check if the media upload was successful
+if response.status_code == 201:
+    media_data = response.json()
+    media_id = media_data['id']
+    print(f"File uploaded successfully with ID: {media_id}")
+
+    # Step 2: Update the metadata in the same request
+    metadata_endpoint = f"{site_url}/wp-json/wp/v2/media/{media_id}"
+
+    # Add custom meta field to the uploaded media
+    meta_payload = {
+        "meta": custom_meta
+    }
+
+    update_response = requests.post(
+        metadata_endpoint,
+        headers={"Content-Type": "application/json"},
+        auth=HTTPBasicAuth(username, password),
+        data=json.dumps(meta_payload)
+    )
+
+    if update_response.status_code == 200:
+        print("Metadata updated successfully!")
+    else:
+        print("Failed to update metadata.", update_response.text)
+else:
+    print("File upload failed.", response.text)  response = requests.get(url, params, auth=HTTPBasicAuth(
                 self.connection.username,
                 self.connection.password))
             self.posts_json = response.json()
