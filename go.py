@@ -74,7 +74,7 @@ def main():
 
 
     # Posts to update
-    
+    posts_to_update = [] 
     for OFileName in OFiles.files:
 
         oFile = OFiles.files[OFileName]
@@ -90,20 +90,16 @@ def main():
         HandleImages(oFile)
         oFile.generate_post_html()
         if not wppost.md5hash == oFile.md5hash or not wppost.wpstatus == oFile.wpstatus:
-            
-            debug_msg("Updating post {} - {} - {}".format(
+             
+            print("Updating post {} - {} - {} - {}".format(
                 post_id, 
                 oFile.title, 
-                oFile.md5hash ))
-            wppost.Update(
-                oFile.md5hash, 
-                oFile.title, 
-                oFile.html, 
                 oFile.wpstatus,
-                oFile.featured_image,)
+                oFile.md5hash ))
+            posts_to_update.append({"wppost":wppost, "oFile":oFile})
 
     # Posts to create 
-
+    posts_to_create = []
     for OFileName in OFiles.files:
         
         debug_msg("create loop: {}".format(OFileName))
@@ -119,14 +115,35 @@ def main():
             oFile.set_md5_hash()
             oFile.save()
             oFile.generate_post_html()
-            new_post = WPPosts.CreatePost(
-                oFile.md5hash,
-                oFile.title,
-                oFile.html,
-                oFile.wpstatus,
-                oFile.featured_image)
-            oFile.post_id = new_post.post_id
-            oFile.save()
+            posts_to_create.append(oFile)
+
+
+
+    #loop through the posts_to_create array 
+    for post_to_create in posts_to_create:
+        oFile = post_to_create
+        new_post = WPPosts.CreatePost(
+            oFile.md5hash,
+            oFile.title,
+            oFile.html,
+            oFile.wpstatus,
+            oFile.featured_image)
+        oFile.post_id = new_post.post_id
+        oFile.save()
+
+
+    #loop through the posts to update
+    for post_to_update in posts_to_update:
+        wppost: Wordpress.WordpressPost = post_to_update["wppost"]
+        oFile: ObsidianFiles.ObsidianFile = post_to_update["oFile"]
+        wppost.Update(
+            oFile.md5hash, 
+            oFile.title, 
+            oFile.html, 
+            oFile.wpstatus,
+            oFile.featured_image,)
+
+
 
     # Posts to remove from WP
     # 
