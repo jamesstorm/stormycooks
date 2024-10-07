@@ -3,6 +3,7 @@ import frontmatter
 import hashlib
 import markdown
 import re
+import markdown_gfm_admonition
 #import Wordpress
 
 debug = False
@@ -183,9 +184,8 @@ class ObsidianFile:
         for r in result:
             md_content = md_content.replace(r[0], 
                     f"![x](/?page_id={r[1]})")
-
-        html = markdown.markdown(md_content)
-        self.html = html
+        html = markdown.markdown(md_content, extensions=[markdown_gfm_admonition.makeExtension()])
+        self.html = f"{html}"
         return html
 
 
