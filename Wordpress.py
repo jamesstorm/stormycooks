@@ -222,14 +222,15 @@ class WordpressPosts(dict):
 
 
     def CreatePost(self, md5hash, title, content, wpstatus, featured_media=None):
-        
+        print(title)        
         post_data = {
             "title": title,
             "content": content,
             "meta": {MD5HASH_FIELD_NAME:md5hash},
             "status": str(wpstatus),  # Can be 'publish', 'draft', etc.
-            "featured_media": featured_media
         }
+        if featured_media:
+            post_data["featured_media"]=featured_media
         response = requests.post(
             "{}/{}".format(self.connection.site_url, 
                               POSTS_API_PATH),
@@ -237,10 +238,9 @@ class WordpressPosts(dict):
             auth=HTTPBasicAuth(self.connection.username, 
                                self.connection.password)
         )
-        #print(response.json()["id"])
+        print(response.status_code)
+        print(response.json())
         new_post = WordpressPost(response.json(), self.connection)
-        #print(new_post.post_id)
-        #print(new_post.md5hash)
         self[response.json()["id"]] = new_post
         return new_post
     
@@ -272,15 +272,15 @@ class WordpressPost:
         return response
 
     def Update(self, md5hash, title, content, wpstatus, featured_media=None):
-        print("Update: md5hash arg: {}".format(md5hash))
         post_data = {
             "title": title, 
             "content": content,
             "post_id": self.post_id,
             "meta": {MD5HASH_FIELD_NAME:md5hash},
             "status": wpstatus,  # Can be 'publish', 'draft', etc.
-            "featured_media": featured_media
         }
+        if featured_media:
+            post_data["featured_media"] = featured_media
         response = requests.post(
             "{}/{}/{}".format(self.connection.site_url, 
                               POSTS_API_PATH, 
