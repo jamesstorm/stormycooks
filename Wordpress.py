@@ -68,7 +68,8 @@ class WordpressMediaFile:
         #with open(filepath, 'rb') as file:
         # Prepare the headers for the request
         headers = {
-            'Content-Disposition': f'attachment; filename={filepath.split("/")[-1]}',
+            'Content-Disposition': 
+                f'attachment; filename={filepath.split("/")[-1]}',
         }
         # Make the POST request to upload the file
         response = requests.put(
@@ -89,7 +90,9 @@ class WordpressMediaFile:
             update_response = requests.post(
                 url,
                 headers={"Content-Type": "application/json"},
-                auth=HTTPBasicAuth(wpconnection.username, wpconnection.password),
+                auth=HTTPBasicAuth(
+                    wpconnection.username, 
+                    wpconnection.password),
                 data=json.dumps(meta_payload)
             )
 
@@ -136,7 +139,10 @@ def WordpressMediaFile_from_id(wpconnection: WordpressConnection, id):
         raise Exception(
             "Request exception while testing Wordpress Connection", e )
 
-def WordpressMediaFile_from_file(wpconnection: WordpressConnection, filepath, md5hash):
+def WordpressMediaFile_from_file(
+        wpconnection: WordpressConnection, 
+        filepath, 
+        md5hash):
     url = "{}/{}".format(wpconnection.site_url, MEDIA_API_PATH)
     # Read the file in binary mode
     with open(filepath, 'rb') as file:
@@ -145,7 +151,8 @@ def WordpressMediaFile_from_file(wpconnection: WordpressConnection, filepath, md
         #}
         # Prepare the headers for the request
         headers = {
-            'Content-Disposition': f'attachment; filename={filepath.split("/")[-1]}',
+            'Content-Disposition': 
+            f'attachment; filename={filepath.split("/")[-1]}',
         }
         # Make the POST request to upload the file
         response = requests.post(
@@ -164,7 +171,9 @@ def WordpressMediaFile_from_file(wpconnection: WordpressConnection, filepath, md
             update_response = requests.post(
                 url,
                 headers={"Content-Type": "application/json"},
-                auth=HTTPBasicAuth(wpconnection.username, wpconnection.password),
+                auth=HTTPBasicAuth(
+                    wpconnection.username, 
+                    wpconnection.password),
                 data=json.dumps(meta_payload)
             )
 
@@ -191,7 +200,20 @@ class WordpressPosts(dict):
         self.connection = wp_connection
         self.posts = self._fetchPosts()
         self._add_post_keys()
+        self.posts_by_title: dict = {}
+        self._poplulate_posts_by_title()
         return
+
+    def _poplulate_posts_by_title(self):
+        for id in self.keys():
+            self.posts_by_title[self[id].title] = self[id]
+        return
+    
+    def post_by_tile(self, title: str):
+        if title in self.posts_by_title.keys():
+            return self.posts_by_title[title]
+        else:
+            return None
 
     def _fetchPosts(self):
         url = "{}/{}".format(self.connection.site_url, POSTS_API_PATH)
@@ -221,7 +243,8 @@ class WordpressPosts(dict):
             self[post["id"]] = WordpressPost(post, self.connection)
 
 
-    def CreatePost(self, md5hash, title, content, wpstatus, featured_media=None):
+    def CreatePost(self, md5hash, title, content, wpstatus, 
+                   featured_media=None):
         print(title)        
         post_data = {
             "title": title,
@@ -241,6 +264,7 @@ class WordpressPosts(dict):
         print(response.status_code)
         print(response.json())
         new_post = WordpressPost(response.json(), self.connection)
+        #print(new_post.md5hash)
         self[response.json()["id"]] = new_post
         return new_post
     
@@ -250,12 +274,22 @@ class WordpressPost:
     def __init__(self, wp_post_json, connection):
         self.post_json = wp_post_json
         self.md5hash = wp_post_json["meta"][MD5HASH_FIELD_NAME]
-        self.title = wp_post_json["title"]
+        self.title = wp_post_json["title"]["rendered"]
         self.wpstatus = wp_post_json["status"]
         self.post_id = wp_post_json["id"]
         self.connection = connection
         
         return
+
+    def load_from_id(id, connection):
+        
+        url = "{}/{}/{}".format(connection.site_url, POSTS_API_PATH, id)
+        response = requests.get(url, auth=HTTPBasicAuth(
+            connection.username,
+            connection.password))
+        if response.status_code != 200:
+            return None 
+        return WordpressPost(response.json(), connection)
 
     def Trash(self):
         self.Delete()

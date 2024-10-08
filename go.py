@@ -32,6 +32,7 @@ WP_PASSWORD = WordPressSecrets.WP_PASSWORD
 
 debug = False 
 
+
 def debug_msg(msg):
     if debug:
         print("DEBUG {}:\n{}".format(sys.argv[0], msg))
@@ -51,6 +52,7 @@ if args.forceupdate:
 
 
 def main():
+    changes_made = False
     OFiles = ObsidianFiles.ObsidianFiles(
         MarkdownSecrets.MARKDOWN_DIR,
         "stormycooks.com")
@@ -68,8 +70,6 @@ def main():
 
     WPPosts = Wordpress.WordpressPosts(WPConnection)
     
-    with open ("./posts.json", 'w') as f:
-        f.write(json.dumps(WPPosts.posts, indent=4))
 
 
 
@@ -118,7 +118,6 @@ def main():
             posts_to_create.append(oFile)
 
 
-
     #loop through the posts_to_create array 
     for post_to_create in posts_to_create:
         oFile = post_to_create
@@ -130,6 +129,7 @@ def main():
             oFile.featured_image)
         oFile.post_id = new_post.post_id
         oFile.save()
+        changes_made = True
 
 
     #loop through the posts to update
@@ -142,6 +142,61 @@ def main():
             oFile.html, 
             oFile.wpstatus,
             oFile.featured_image,)
+        changes_made = True
+
+
+
+
+
+    # After content updates and changes are done, we will now
+    # correct links between posts. We only need to do this if
+    # there were any changes made to Obsidian files or Wordpress posts.
+    if changes_made: 
+        WPPosts = Wordpress.WordpressPosts(WPConnection)
+        OFiles = ObsidianFiles.ObsidianFiles(
+            MarkdownSecrets.MARKDOWN_DIR,
+            "stormycooks.com")
+
+        posts_to_update = []
+        for filename in OFiles.files:
+            oFile: ObsidianFiles.ObsidianFile = OFiles.files[filename]
+            update_this_oFile = False
+            if not oFile.include:
+                continue
+            if not "wp_status" in oFile.frontmatter.keys():
+                continue
+            if not oFile.frontmatter["wp_status"] == "publish":
+                continue
+            pattern1 = r"((?<!\!)\[(.*?)\]\(.*?\))" # non-image (no !) Markdown links
+                                                    # [link text](link)
+
+            pattern2 = r"((?<!\!)\[\[(.*?)\]\])"    # non-image (no !) Wikilinks
+                                                    # [[link text]]
+            content: str = oFile.frontmatter.content
+            matches = re.findall(pattern1, content)
+            matches.extend(re.findall(pattern2, content))
+            if len(matches) == 0:
+                continue
+            for match in matches:
+                update_this_oFile = True
+                linktext: str = match[1]
+                wppost: WordPress.WordpressPost = WPPosts.post_by_tile(linktext)
+                if wppost and wppost.wpstatus == "publish":
+                    oldlink = match[0]
+                    newlink = f"[{match[1]}](/?page_id={wppost.post_id})"
+                    content = content.replace(oldlink, newlink)
+                    oFile.frontmatter.content = content
+                else:
+                    oldlink = match[0]
+                    newlink = f"{match[1]}"
+                    content = content.replace(oldlink, newlink)
+                    oFile.frontmatter.content = content
+            if update_this_oFile:
+                print(f"updating links for {oFile.title} with id {oFile.post_id}")
+                post_to_update = Wordpress.WordpressPost.load_from_id(oFile.post_id, WPConnection)
+                print(post_to_update.wpstatus)
+                oFile.generate_post_html()
+                post_to_update.Update(oFile.md5hash, oFile.title, oFile.html, "publish")
 
 
 
@@ -266,7 +321,6 @@ def HandleImages(OFile: ObsidianFiles.ObsidianFile):
         dprint(imagecreate["new_wiki_image_link"])
         dprint("---------------------------------------")
 
-        
 
 
 
@@ -282,6 +336,8 @@ def HandleImages(OFile: ObsidianFiles.ObsidianFile):
             imagecreate["original_wiki_image_Link"], 
             imagecreate["new_wiki_image_link"])
         OFile.save()
+        changes_made = True
+
 
     # Turns out there is no way (in stock Wordpress) to update 
     # the media file for a media/attachment item. 

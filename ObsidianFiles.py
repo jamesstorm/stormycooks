@@ -46,6 +46,7 @@ class ObsidianFiles:
     def __init__(self, directory, required_property=None ):
         debug_msg("Obs5idianFiles __init__")
         self.root_directoy = directory
+        self.required_property = required_property
         if not os.path.isdir(self.root_directoy):
             raise Exception("Cannot access markdown_dir: {}".
                             format(self.root_directoy))
@@ -103,30 +104,26 @@ class ObsidianFile:
         debug_msg("ObdsidianFile __init__ {}".format(filename))
         self.filepath = filepath
         self.html = "" # default value
-        self.include  = False
+        self.include = False
         self.frontmatter = frontmatter.load(filepath)
-        #required_property = None
         self._post_id = None
         self._featured_image: str = "" 
         if "post_id" in self.frontmatter.keys():
             self.post_id = self.frontmatter["post_id"] 
         if not required_property == None:
             if not required_property in self.frontmatter.keys():
-                self.include = True
+                self.include = False 
                 return #bail if the required property is not present
             if self.frontmatter[required_property] == False:
-                self.include = True
+                self.include = False 
                 return #bail if the required property is False
-        
+         
         self.filename = filename
         self.md5hash = None
-        self.set_md5_hash()
         self.title = self.filename.replace(".md", "")
-        if "title" in self.frontmatter.keys():
-            self.title = self.frontmatter["title"]
+        self.set_md5_hash()
         if not "wp_status" in self.frontmatter.keys():
             self.frontmatter["wp_status"] = "draft"
-            #self.save():Warning()
         self.wpstatus = "" 
         self.wpstatus = self.frontmatter["wp_status"]
         self.html = self.generate_post_html()
@@ -145,29 +142,16 @@ class ObsidianFile:
     @property
     def post_id(self):
         return self._post_id
-
     @post_id.setter
     def post_id(self, value):
         self._post_id = value
         self.frontmatter["post_id"] = value
 
     def set_md5_hash(self):
-        title = ""
-        if "title" in self.frontmatter.keys():
-            title = self.frontmatter["title"]
-        content_plus_title = "{}{}".format(self.frontmatter.content, title)
+        content_plus_title = "{}{}".format(self.frontmatter.content, self.title)
         md5hash = hashlib.md5(content_plus_title.encode('utf-8')).hexdigest()
         self.md5hash = md5hash
         return
-
-    #def generate_md5hash_from_fm(self, fm):
-    #    title = ""
-    #    if "title" in fm.keys():
-    #        title = fm["title"]
-    #    content_plus_title = "{}{}".format(fm.content, title)
-    #    md5hash = hashlib.md5(content_plus_title.encode('utf-8')).hexdigest()
-    #    self.md5hash = md5hash
-    #    return md5hash
 
 
     def save(self):
@@ -175,15 +159,24 @@ class ObsidianFile:
             f.write(frontmatter.dumps(self.frontmatter))
 
     def generate_post_html(self):
+    
         md_content = self.frontmatter.content
+        
+        # remove my private notes from the markdown
         markdown_callout_pattern = r'> *\[!My Notes\].*(\n>.*)*'
         md_content = re.sub(markdown_callout_pattern, "", md_content)
-        #images
+        
+        # Images
+        # Here, we change the target of the image markdown linka so that 
+        # when converted to html, they point at the right media file 
+        # in Wordpress
         pattern = r'(!\[.*?id=(\d+).*?\]\(.*?\))'
         result = re.findall(pattern, md_content)
         for r in result:
             md_content = md_content.replace(r[0], 
                     f"![x](/?page_id={r[1]})")
+
+        # Do the HTML conversion
         html = markdown.markdown(md_content, extensions=[markdown_gfm_admonition.makeExtension()])
         self.html = f"{html}"
         return html
@@ -192,16 +185,10 @@ class ObsidianFile:
 
 
 def compute_md5(filepath, chunk_size=4096):
-    # Initialize the md5 hash object
     md5_hash = hashlib.md5()
-    
-    # Open the file in binary mode
     with open(filepath, "rb") as f:
-        # Read the file in chunks and update the hash
         for chunk in iter(lambda: f.read(chunk_size), b""):
             md5_hash.update(chunk)
-    
-    # Return the hexadecimal MD5 hash
     return md5_hash.hexdigest()
             
 
