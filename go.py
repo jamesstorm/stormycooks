@@ -5,10 +5,20 @@ import re
 import argparse
 import json
 import sys
+import logging
 import Wordpress
-import WordPressSecrets
+import Wordpress.WordpressMedia as wpm
+import Wordpress.WordpressConnection as wpc
+import Wordpress.WordpressPosts as wpp
+import WordPressSecrets as wps
 import MarkdownSecrets
 import ObsidianFiles
+
+
+
+logging.basicConfig(
+    filename="go.log",
+    level=logging.DEBUG)
 
 # WordPressSecrets should be in a file called WordPressSecrets.py. 
 # The contents should look like this:
@@ -25,11 +35,7 @@ import ObsidianFiles
 
 
 FORCE_UPDATE_ALL = False 
-
-WP_SITE_URL = WordPressSecrets.WP_SITE_URL
-WP_USERNAME = WordPressSecrets.WP_USERNAME
-WP_PASSWORD = WordPressSecrets.WP_PASSWORD
-
+MD5HASH_FIELD_NAME = "_md5hash"
 debug = False 
 
 
@@ -58,18 +64,18 @@ def main():
         "stormycooks.com")
     WPConnection = None
     try:
-        WPConnection = Wordpress.WordpressConnection(
-            WP_SITE_URL,
-            WP_USERNAME,
-            WP_PASSWORD)
+        WPConnection = wpc.WordpressConnection(
+            wps.WP_SITE_URL,
+            wps.WP_USERNAME,
+            wps.WP_PASSWORD,
+            wps.WP_ROUTES)
     except Exception as e:
         print(e)
         return False
 
     
 
-    WPPosts = Wordpress.WordpressPosts(WPConnection)
-    
+    WPPosts = wpp.WordpressPosts(WPConnection)
 
 
 
@@ -87,15 +93,14 @@ def main():
             continue
 
         wppost = WPPosts[post_id]
-        HandleImages(oFile)
-        oFile.generate_post_html()
-        if not wppost.md5hash == oFile.md5hash or not wppost.wpstatus == oFile.wpstatus:
-             
-            print("Updating post {} - {} - {} - {}".format(
+        if not wppost.meta[MD5HASH_FIELD_NAME] == oFile.md5hash or not wppost.wpstatus == oFile.wpstatus:
+            logging.info("Updating post {} - {} - {} - {}".format(
                 post_id, 
                 oFile.title, 
                 oFile.wpstatus,
                 oFile.md5hash ))
+            HandleImages(oFile, wp_connection=WPConnection)
+            oFile.generate_post_html()
             posts_to_update.append({"wppost":wppost, "oFile":oFile})
 
     # Posts to create 
@@ -111,7 +116,7 @@ def main():
             continue
         if not post_id in WPPosts.keys() and oFile.frontmatter["stormycooks.com"]==True:
             debug_msg(f"{__file__} Creating: {oFile.title} - {oFile.md5hash}")
-            HandleImages(oFile)
+            HandleImages(oFile, WPConnection)
             oFile.set_md5_hash()
             oFile.save()
             oFile.generate_post_html()
@@ -122,7 +127,7 @@ def main():
     for post_to_create in posts_to_create:
         oFile = post_to_create
         new_post = WPPosts.CreatePost(
-            oFile.md5hash,
+            {MD5HASH_FIELD_NAME:oFile.md5hash},
             oFile.title,
             oFile.html,
             oFile.wpstatus,
@@ -136,12 +141,14 @@ def main():
     for post_to_update in posts_to_update:
         wppost: Wordpress.WordpressPost = post_to_update["wppost"]
         oFile: ObsidianFiles.ObsidianFile = post_to_update["oFile"]
+        print(f"oFile.featured_media = {oFile.featured_image}")
+        meta = {MD5HASH_FIELD_NAME:oFile.md5hash}
         wppost.Update(
-            oFile.md5hash, 
-            oFile.title, 
-            oFile.html, 
-            oFile.wpstatus,
-            oFile.featured_image,)
+            meta = meta,
+            title = oFile.title,
+            content = oFile.html,
+            wpstatus = oFile.wpstatus,
+            featured_media = oFile.featured_image)
         changes_made = True
 
 
@@ -152,7 +159,8 @@ def main():
     # correct links between posts. We only need to do this if
     # there were any changes made to Obsidian files or Wordpress posts.
     if changes_made: 
-        WPPosts = Wordpress.WordpressPosts(WPConnection)
+        print("changes")
+        WPPosts = wpp.WordpressPosts(WPConnection)
         OFiles = ObsidianFiles.ObsidianFiles(
             MarkdownSecrets.MARKDOWN_DIR,
             "stormycooks.com")
@@ -167,6 +175,8 @@ def main():
                 continue
             if not oFile.frontmatter["wp_status"] == "publish":
                 continue
+
+            print(filename)
             pattern1 = r"((?<!\!)\[(.*?)\]\(.*?\))" # non-image (no !) Markdown links
                                                     # [link text](link)
 
@@ -176,27 +186,35 @@ def main():
             matches = re.findall(pattern1, content)
             matches.extend(re.findall(pattern2, content))
             if len(matches) == 0:
+                print("no matches")
                 continue
             for match in matches:
+                print("MATCH")
                 update_this_oFile = True
                 linktext: str = match[1]
                 wppost: WordPress.WordpressPost = WPPosts.post_by_tile(linktext)
                 if wppost and wppost.wpstatus == "publish":
                     oldlink = match[0]
                     newlink = f"[{match[1]}](/?page_id={wppost.post_id})"
+                    print(f"oldlink {oldlink}")
+                    print(f"newlink {newlink}")
                     content = content.replace(oldlink, newlink)
                     oFile.frontmatter.content = content
                 else:
+                    #just remove the link an leave the text
                     oldlink = match[0]
                     newlink = f"{match[1]}"
+                    print(f"oldlink {oldlink}")
+                    print(f"newlink {newlink}")
                     content = content.replace(oldlink, newlink)
                     oFile.frontmatter.content = content
             if update_this_oFile:
-                print(f"updating links for {oFile.title} with id {oFile.post_id}")
-                post_to_update = Wordpress.WordpressPost.load_from_id(oFile.post_id, WPConnection)
-                print(post_to_update.wpstatus)
+                print(f"updating {filename}")
+                logging.info(f"updating links for {oFile.title} with id {oFile.post_id}")
+                post_to_update = wpp.WordpressPost.load_from_id(oFile.post_id, WPConnection)
                 oFile.generate_post_html()
-                post_to_update.Update(oFile.md5hash, oFile.title, oFile.html, "publish")
+                meta = {MD5HASH_FIELD_NAME:oFile.md5hash}
+                post_to_update.Update(meta, oFile.title, oFile.html, "publish")
 
 
 
@@ -245,7 +263,8 @@ def dprint(x):
     if show:
         print(x)
 
-def HandleImages(OFile: ObsidianFiles.ObsidianFile):
+def HandleImages(OFile: ObsidianFiles.ObsidianFile, wp_connection: Wordpress.WordpressConnection):
+    logging.info(f"HandleImages starting for {OFile.filename}")
     md = OFile.frontmatter.content
     pattern = r"\!\[(.*?)\]\((.*?)\)"
     matches = re.findall(pattern, md)
@@ -253,15 +272,19 @@ def HandleImages(OFile: ObsidianFiles.ObsidianFile):
     images_to_create = []
 
     issues = []
+    if len(matches) == 0:
+        logging.info(f"No image links found in {OFile.filename}")
+        return
+    logging.info(f"HandleImages found {len(matches)} image link in {OFile.filename}. Matches = {matches}")
     for match in matches:
-        #dprint("===========================")
-        dprint(match)
+        logging.info(f"{match}")
         path_in_obsidian_file = urllib.parse.unquote(match[1])
         filename = os.path.basename(path_in_obsidian_file)
         purported_file_path = os.path.join(
             MarkdownSecrets.IMAGE_DIR, 
             filename
         )
+        logging.info(f"purported_file_path = {purported_file_path}")
         obsidianimage = ObsidianFiles.ObdsidianImage(purported_file_path)
         if not obsidianimage.exists:
             issues.append({
@@ -269,68 +292,84 @@ def HandleImages(OFile: ObsidianFiles.ObsidianFile):
                 "message":"image does not exist in the correct directory"})
             break
 
-        dprint(obsidianimage.md5hash)
-
-        
-
+        logging.info(f"Image exists where expected")
+        logging.info(f"{filename} hash is  {obsidianimage.md5hash}")
         #does the image have an id?
         id = re.search(r'id=(\d+)', match[0])
         if id:
-            dprint(f"bingo this image link has an id {id[1]}")
+            logging.info(f"This image link has an id {id[1]}")
             obsidianimage.id = id[1]
             images_to_update.append({
                 "obsidianimage": obsidianimage,
             })
+            #verify the image with this id exists on wordpress.
+            
+            wpimg: wpm.WordpressMediaFile = wpm.WordpressMediaFile_from_id(wp_connection, id[1])
+            if not wpimg.exists_on_wordpress:
+                origtext = match[0] # need to strip the bad id from this string
+                pattern = r'id=[0-9]*'
+                newlinktext = re.sub(pattern, "", match[0])
+                #also remove extraneous |
+                pattern = r'\|{2,}' 
+                newlinktext = re.sub(pattern, "", newlinktext)
+
+                images_to_create.append({
+                    "obsidianimage": obsidianimage,
+                    "original_wiki_image_Link" : f"![{match[0]}]({match[1]})",
+                    "new_wiki_image_link": f"![{newlinktext}|id={{id}}]({match[1]})"
+                })
+
         else:
+            logging.info(f"The link does not have an id")
             images_to_create.append({
                 "obsidianimage": obsidianimage,
                 "original_wiki_image_Link" : f"![{match[0]}]({match[1]})",
                 "new_wiki_image_link": f"![{match[0]}|id={{id}}]({match[1]})"
             })
 
-
         # Is this the FeaturedImage? If so, set it. 
         typepmatch = re.search(r'type=FeaturedImage', match[0])
         if typepmatch:
+            print("FEATURED IMAGE")
             OFile.featured_image=obsidianimage.id
+        else:
+            print("NO FEATURED IMAGE")
+
+        
+
+    logging.info(f"images_to_create: {images_to_create}")
 
     if len(issues) > 0:
-        dprint("IMAGE ISSUES")
+        logging.info("IMAGE ISSUES")
         for issue in issues:
-            dprint(issue)
+            logging.info(issue)
         return
 
-    WPConnection = None
-    try:
-        WPConnection = Wordpress.WordpressConnection(
-            WordPressSecrets.WP_SITE_URL,
-            WordPressSecrets.WP_USERNAME,
-            WordPressSecrets.WP_PASSWORD)
-    except Exception as e:
-        dprint(e)
-        return False
+    logging.info("Images all exist in the correct directory. Continuing")
 
-    dprint("Images all exist in the correct directory. Continuing")
-
-    dprint("\n\n\nImages to create in Wordpress")
-    dprint("=============================")
+    logging.info("\n\n\nImages to create in Wordpress")
     for imagecreate in images_to_create:
         #obimage: ObsidianFiles.ObdsidianImage = imagecreate["obsidianimage"]
-        dprint(imagecreate["obsidianimage"].filepath)
-        dprint(imagecreate["original_wiki_image_Link"])
-        dprint(imagecreate["new_wiki_image_link"])
-        dprint("---------------------------------------")
+        logging.info(imagecreate["obsidianimage"].filepath)
+        logging.info(imagecreate["original_wiki_image_Link"])
+        logging.info(imagecreate["new_wiki_image_link"])
 
 
 
+        meta = {
+            MD5HASH_FIELD_NAME:imagecreate["obsidianimage"].md5hash
+        }
 
-        wpMediaFile = Wordpress.WordpressMediaFile_from_file(
-            WPConnection, 
+        meta = {}
+        meta[MD5HASH_FIELD_NAME] = imagecreate["obsidianimage"].md5hash
+        wpMediaFile = wpm.WordpressMediaFile_from_file(
+            wp_connection, 
             imagecreate["obsidianimage"].filepath,
-            imagecreate["obsidianimage"].md5hash)
-
+            meta=meta)
         if wpMediaFile == None:
             raise Exception("upload did nay work")
+        print(f"wpMediaFile.id: {wpMediaFile.id}")
+        print(f"imagecreate[new_wiki_image_link] = {imagecreate["new_wiki_image_link"]}")
         imagecreate["new_wiki_image_link"] = imagecreate["new_wiki_image_link"].format(id=wpMediaFile.id)
         OFile.frontmatter.content = OFile.frontmatter.content.replace(
             imagecreate["original_wiki_image_Link"], 
@@ -344,20 +383,23 @@ def HandleImages(OFile: ObsidianFiles.ObsidianFile):
     #dprint("\n\n\nImages to update in wordpress - if hash is different")
     #dprint("=============================")
     #for imageupdate in images_to_update:
+    #    print("boo")
     #    obimage: ObsidianFiles.ObdsidianImage = imageupdate["obsidianimage"]
-    #    dprint("---------------------------------------")
-    #    dprint(obimage.id)
-    #    dprint(obimage.filepath)
-    #    wp_image = Wordpress.WordpressMediaFile_from_id(WPConnection, obimage.id)
-    #    dprint(f"ob {obimage.id}: {obimage.md5hash} ")
-    #    dprint(f"wp {wp_image.id}: {wp_image.md5hash} ")
-    #    if wp_image.exists_on_wordpress and not wp_image.md5hash == obimage.md5hash:
-    #        dprint(f"Updating media: {obimage.id} with {obimage.filepath}")
+    ##    dprint("---------------------------------------")
+    ##    dprint(obimage.id)
+    ##    dprint(obimage.filepath)
+    #    wp_image: wpm.WordpressMediaFile = wpm.WordpressMediaFile_from_id(wp_connection, obimage.id)
+    ##    dprint(f"ob {obimage.id}: {obimage.md5hash} ")
+    ##    dprint(f"wp {wp_image.id}: {wp_image.md5hash} ")
+    #    print(obimage.filepath)
+    #    if wp_image.exists_on_wordpress and not wp_image.meta[MD5HASH_FIELD_NAME]== obimage.md5hash:
+    #        print("xcv")
+    #        logging.info(f"Updating media: {obimage.id} with {obimage.filepath}")
     #        wp_image.update_media_file(WPConnection, obimage.filepath, obimage.md5hash)
     #    else:
     #        dprint(f"NOT updating {obimage.id} {obimage.filepath} because md5 is not changed")
 
-    #
+    ##
     return 
 
 main()
