@@ -1,49 +1,18 @@
 import json
 import requests
 from requests.auth import HTTPBasicAuth
+import logging
+
+from Wordpress import WordpressConnection
+
+#from requests.sessions import InvalidSchema
 #import json
 
-POSTS_API_PATH="wp-json/wp/v2/posts"
-USERS_API_PATH="wp-json/wp/v2/users"
-MEDIA_API_PATH="wp-json/wp/v2/media"
 
 MD5HASH_FIELD_NAME = "_md5hash"
-
-class WordpressConnection:
-
-    def __init__(self, site_url, username, password):
-        self.site_url = site_url
-        self.username = username
-        self.password = password
-        self.ok = False
-        self.test()
-
-    def test(self): 
-        url = "{}/{}?context=edit".format(self.site_url, USERS_API_PATH)
-        try:
-            response = requests.get(
-                url, 
-                auth=HTTPBasicAuth(self.username, self.password))
-            response.raise_for_status()
-            self.ok = True
-            return WordpressResponse(
-                response.status_code, 
-                response.ok, 
-                response.json())
-        except requests.exceptions.HTTPError as e:
-            if e.response.status_code == 401:
-                raise Exception("Unauthorized - check credentials", e)
-            if e.response.status_code == 404:
-                raise Exception(
-                    "no api url present. is this a WordPress site?")
-            else:
-                raise Exception(
-                    "HTTPError when testing Wordpress connection", e)
-        except requests.RequestException as e:
-            raise Exception(
-                "Request exception while testing Wordpress Connection", e )
-
-
+logging.basicConfig(
+    filename="wordpress.log",
+    level=logging.DEBUG)
 
 
 class WordpressMediaFile:
@@ -58,9 +27,9 @@ class WordpressMediaFile:
         self.title = title
         return
 
-    def update_media_file(self, wpconnection, filepath, md5hash):
+    def update_media_file(self, wpconnection: WordpressConnection, filepath, md5hash):
         print(f"{__file__} update_media_file")
-        url = "{}/{}/{}".format(wpconnection.site_url, MEDIA_API_PATH, self.id)
+        url = "{}/{}/{}".format(wpconnection.site_url, wpconnection.routes["MEDIA_API_PATH"], self.id)
         print(f"filepath: {filepath}")
         print(f"md5hash: {md5hash}")
         print(f"url: {url}")
@@ -269,7 +238,6 @@ class WordpressPosts(dict):
         return new_post
     
     
-
 class WordpressPost:
     def __init__(self, wp_post_json, connection):
         self.post_json = wp_post_json
