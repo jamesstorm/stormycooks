@@ -2,6 +2,16 @@
 
 
 import WordPressSecrets as wps
-import Wordpress.Wordpress as wp
+import Wordpress.WordpressMedia as wpm
+import Wordpress.WordpressConnection as wpc
+connection = wpc.WordpressConnection(
+    wps.WP_SITE_URL,
+    wps.WP_USERNAME,
+    wps.WP_PASSWORD,
+    wps.WP_ROUTES)
 
-c = wp.WordpressConnection(wps.WP_SITE_URL, "x"+wps.WP_USERNAME, wps.WP_PASSWORD)
+
+id = 1209
+
+w: wpm.WordpressMediaFile = wpm.WordpressMediaFile_from_id(connection, id) 
+print(w.meta)
