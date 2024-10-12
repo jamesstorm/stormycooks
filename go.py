@@ -12,9 +12,9 @@ import Wordpress.WordpressConnection as wpc
 import Wordpress.WordpressPosts as wpp
 import WordPressSecrets as wps
 import MarkdownSecrets
-import ObsidianFiles
-
-
+import Obsidian.ObsidianMarkdownFiles as obfiles
+import Obsidian.ObsidianMarkdownFile as obfile
+import Obsidian.ObsidianImage as obimage
 
 logging.basicConfig(
     filename="go.log",
@@ -59,7 +59,7 @@ if args.forceupdate:
 
 def main():
     changes_made = False
-    OFiles = ObsidianFiles.ObsidianFiles(
+    OFiles = obfiles.ObsidianMarkdownFiles(
         MarkdownSecrets.MARKDOWN_DIR,
         "stormycooks.com")
     WPConnection = None
@@ -161,7 +161,7 @@ def main():
     if changes_made: 
         print("changes")
         WPPosts = wpp.WordpressPosts(WPConnection)
-        OFiles = ObsidianFiles.ObsidianFiles(
+        OFiles = obfiles.ObsidianMarkdownFiles(
             MarkdownSecrets.MARKDOWN_DIR,
             "stormycooks.com")
 
@@ -263,7 +263,8 @@ def dprint(x):
     if show:
         print(x)
 
-def HandleImages(OFile: ObsidianFiles.ObsidianFile, wp_connection: Wordpress.WordpressConnection):
+def HandleImages(OFile: obfile.ObsidianMarkdownFile, wp_connection: Wordpress.WordpressConnection):
+
     logging.info(f"HandleImages starting for {OFile.filename}")
     md = OFile.frontmatter.content
     pattern = r"\!\[(.*?)\]\((.*?)\)"
@@ -285,7 +286,7 @@ def HandleImages(OFile: ObsidianFiles.ObsidianFile, wp_connection: Wordpress.Wor
             filename
         )
         logging.info(f"purported_file_path = {purported_file_path}")
-        obsidianimage = ObsidianFiles.ObdsidianImage(purported_file_path)
+        obsidianimage = obimage.ObdsidianImage(purported_file_path)
         if not obsidianimage.exists:
             issues.append({
                 "img":obsidianimage.filepath, 
