@@ -1,0 +1,9 @@
+""".gitignore"""
+.venv/
+__pycache__/
+build/
+.pytest_cache/
+.*.DS_Store
+._*
+local_config.py
+deploy.local.env

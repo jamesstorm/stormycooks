@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}About — {{ site_name }}{% endblock %}
+{% block meta_description %}About {{ site_name }} — recipes shared for friends and family by {{ site_owner }}.{% endblock %}
+{% block content %}
+<article class="about">
+  <h1>About</h1>
+  <p>{{ site_name }} is a small collection of recipes from {{ site_owner }} — dishes I cook at home,
+  tested over the years, shared here for friends and family.</p>
+  <p>Each recipe is written the way I actually make it: ingredients, mise en place, and step-by-step
+  preparation. If something is missing or unclear, or you'd like to share a note, reach out.</p>
+  <p class="contact"><strong>Contact:</strong> <a href="mailto:{{ site_email }}">{{ site_email }}</a></p>
+</article>
+{% endblock %}

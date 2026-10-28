@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}{{ site_name }} — Recipes{% endblock %}
+{% block meta_description %}{{ site_tagline }}{% endblock %}
+{% block content %}
+<div class="home-top">
+  <h1>{{ site_name }}</h1>
+  <p class="tagline">{{ site_tagline }}</p>
+</div>
+
+<div class="controls">
+  <input type="search" id="search" placeholder="Search recipes…" autocomplete="off">
+  <div id="tags" class="tags"></div>
+</div>
+
+<div id="grid" class="grid" data-count="{{ recipes | length }}">
+  {% for r in recipes %}
+  <a class="card" href="{{ base_url }}recipes/{{ r.slug }}/"
+     data-title="{{ r.title | lower }}"
+     data-tags="{{ r.tags | join('|') }}">
+    {% if r.hero_img %}
+      <div class="thumb"><img src="{{ base_url }}{{ r.hero_img }}" alt="" loading="lazy"></div>
+    {% else %}
+      <div class="thumb thumb-ph" aria-hidden="true">{{ r.title | first }}</div>
+    {% endif %}
+    <div class="card-body">
+      <h2 class="card-title">{{ r.title }}</h2>
+      <div class="card-tags">
+        {% for t in r.tags[:4] %}<span class="pill">{{ t }}</span>{% endfor %}
+      </div>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+<p id="none" class="none" hidden>No recipes match your search.</p>
+{% endblock %}

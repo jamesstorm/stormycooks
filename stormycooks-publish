@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# stormycooks-publish — rebuild the static site from the Obsidian vault and deploy.
+#
+# Usage: ./stormycooks-publish
+#   1. Rebuilds build/ from the vault (read-only).
+#   2. Deploys to the docroot of the stormycooks nginx container, which the
+#      reverse proxy fronts for stormycooks.com.
+#
+# Deploy target comes from local_config/deploy config, never hardcoded here.
+# Note: the target host has no rsync, so deploy is a tar-over-ssh pipe.
+# The Obsidian vault is never modified.
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
+VENV_PY="$SCRIPT_DIR/.venv/bin/python"
+if [ ! -x "$VENV_PY" ]; then
+  echo "venv missing — creating" >&2
+  /opt/homebrew/bin/python3 -m venv "$SCRIPT_DIR/.venv"
+  "$VENV_PY" -m pip install --quiet python-frontmatter jinja2 markdown
+fi
+
+# Load deploy target from a gitignored local file (see README) or env vars.
+SSH_TARGET="${STORMYCOOKS_SSH_TARGET:-}"
+DOCROOT="${STORMYCOOKS_DOCROOT:-}"
+if [ -f "$SCRIPT_DIR/deploy.local.env" ]; then
+  # shellcheck disable=SC1091
+  . "$SCRIPT_DIR/deploy.local.env"
+fi
+if [ -z "$SSH_TARGET" ] || [ -z "$DOCROOT" ]; then
+  echo "Missing deploy target: set STORMYCOOKS_SSH_TARGET and STORMYCOOKS_DOCROOT (or deploy.local.env)" >&2
+  exit 1
+fi
+
+echo "→ Building site from vault (read-only)..."
+"$VENV_PY" build.py
+
+echo "→ Deploying to $SSH_TARGET ($DOCROOT)..."
+tar czf - -C "$SCRIPT_DIR/build" . | ssh -o BatchMode=yes "$SSH_TARGET" \
+  "rm -rf '$DOCROOT' && mkdir -p '$DOCROOT' && tar xzf - -C '$DOCROOT' 2>/dev/null"
+
+echo "✓ Deployed. NPM fronts stormycooks.com."

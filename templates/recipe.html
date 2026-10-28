@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}{{ recipe.title }} — {{ site_name }}{% endblock %}
+{% block meta_description %}{{ recipe.description }}{% endblock %}
+{% block head_extra %}
+<script type="application/ld+json">{{ jsonld | safe }}</script>
+<link rel="canonical" href="{{ site_url }}/recipes/{{ recipe.slug }}/">
+{% endblock %}
+{% block content %}
+<article class="recipe">
+  <h1 class="recipe-title">{{ recipe.title }}</h1>
+  <div class="recipe-tags">
+    {% for t in recipe.tags %}<span class="pill">{{ t }}</span>{% endfor %}
+  </div>
+
+  {% if recipe.hero_img %}
+    <figure class="hero">
+      <img src="{{ base_url }}{{ recipe.hero_img }}" alt="{{ recipe.title }}">
+    </figure>
+  {% endif %}
+
+  {% if recipe.intro %}<div class="intro">{{ recipe.intro | safe }}</div>{% endif %}
+
+  {% for key, title, html in sections_list %}
+    <section class="block block-{{ key }}">
+      <h2 class="block-title">{{ title }}</h2>
+      <div class="block-body">{{ html | safe }}</div>
+    </section>
+  {% endfor %}
+
+  {% if not recipe.has_sections and recipe.body_html %}
+    <div class="body-freeform">{{ recipe.body_html | safe }}</div>
+  {% endif %}
+</article>
+<p class="back"><a href="{{ base_url }}">&larr; All recipes</a></p>
+{% endblock %}

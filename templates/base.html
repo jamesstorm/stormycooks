@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ site_name }}{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}{{ site_tagline }}{% endblock %}">
+  {% block head_extra %}{% endblock %}
+  <link rel="stylesheet" href="{{ base_url }}css/main.css">
+</head>
+<body>
+  <header class="site-header">
+    <a href="{{ base_url }}" class="site-title">{{ site_name }}</a>
+    <nav>
+      <a href="{{ base_url }}">Recipes</a>
+      <a href="{{ base_url }}about.html">About</a>
+    </nav>
+  </header>
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="site-footer">
+    <p>&copy; {{ site_year }} {{ site_owner }} &middot; <a href="mailto:{{ site_email }}">{{ site_email }}</a></p>
+  </footer>
+  <script src="{{ base_url }}js/site.js" defer></script>
+</body>
+</html>
