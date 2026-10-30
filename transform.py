@@ -147,30 +147,25 @@ def _rewrite_links(body: str, published: dict, warnings: list) -> str:
     return body
 
 
-def _extract_images(body: str, resolver, hero_source=None):
+def _extract_images(body: str, resolver):
     """Rewrite ![alt](path) to site asset paths.
 
     resolver(abs_or_relative_path) -> absolute source path or None.
-    hero_source: resolved path of the frontmatter-selected hero (or None).
 
-    Hero semantics:
-    - An EXPLICIT hero (frontmatter `hero:` or the first image captioned
-      type=FeaturedImage) is suppressed from the body: it belongs to the
-      top-of-page hero block and must not appear twice.
-    - Without any explicit marking, images keep their exact document
-      position. The first image still doubles as the thumbnail / JSON-LD
-      image (returned as hero), but it is NOT pulled out of the body.
+    No assumptions are made about heroes: only an image whose caption is
+    explicitly labelled type=FeaturedImage becomes the hero (top-of-page
+    block, homepage thumbnail, JSON-LD image). The first such image wins
+    and is suppressed from the body so it never appears twice; all other
+    images — marked or not — keep their exact document position.
 
-    Returns (new_body, source_paths_in_order, hero_source_path_or_None,
-             hero_is_explicit).
+    Returns (new_body, source_paths_in_order, hero_source_path_or_None).
     """
     images = []
     hero = None
-    hero_explicit = False
     marked = []
 
     def repl(m):
-        nonlocal hero, hero_explicit
+        nonlocal hero
         alt, target = m.group(1), m.group(2).strip()
         if re.match(r"^[a-z]+://", target):
             return ""  # external images dropped
@@ -187,23 +182,14 @@ def _extract_images(body: str, resolver, hero_source=None):
         if src not in images:
             images.append(src)
         safe = re.sub(r"[^A-Za-z0-9._-]+", "-", os.path.basename(decoded)).strip("-")
-        if hero_source is not None:
-            suppress = src == hero_source
-        elif marked:
-            suppress = src == marked[0]
-        else:
-            suppress = False  # implicit images keep their document position
-        if suppress:
+        if marked and src == marked[0]:
             if hero is None:
                 hero = src
-                hero_explicit = True
             return ""
-        if hero_source is None and hero is None:
-            hero = src  # first image doubles as the thumb/JSON-LD image
         return f'<img src="/assets/img/{safe}" alt="{escape(alt)}" loading="lazy">'
 
     out = re.sub(r"!\[([^\]]*)\]\(([^)]+)\)", repl, body)
-    return out, images, hero, hero_explicit
+    return out, images, hero
 
 
 def _parse_sections(body: str):
@@ -317,7 +303,6 @@ class Recipe:
     body_html: str = ""
     images: list = field(default_factory=list)
     hero_src: str | None = None
-    hero_explicit: bool = False
     warnings: list = field(default_factory=list)
     created: str = ""
     updated: str = ""
@@ -373,29 +358,7 @@ def transform_recipe(
     body = _rewrite_links(body, published, warnings)
 
     resolver = resolve_image or (lambda p: None)
-
-    # Optional explicit hero (frontmatter `hero:`), plain path or [[wikilink]].
-    # NB: `hero: [[file.png]]` parses as a one-element YAML flow sequence.
-    hero_source = None
-    hero_meta = meta.get("hero")
-    if hero_meta:
-        while isinstance(hero_meta, list) and len(hero_meta) == 1:
-            hero_meta = hero_meta[0]
-        hero_candidate = str(hero_meta).strip()
-        hero_candidate = re.sub(r"^\[\[|\]\]$", "", hero_candidate)
-        hero_source = resolver(urllib.parse.unquote(hero_candidate))
-        if hero_source is None:
-            warnings.append(f"hero image not found: {hero_meta!r}")
-
-    body_with_images, images, hero_src, hero_explicit = _extract_images(
-        body, resolver, hero_source
-    )
-    if hero_src is None and hero_source is not None:
-        # Explicit hero but the file appears nowhere inline: still use it.
-        hero_src = hero_source
-        hero_explicit = True
-        if hero_source not in images:
-            images.append(hero_source)
+    body_with_images, images, hero_src = _extract_images(body, resolver)
 
     intro_raw, sections_raw = _parse_sections(body_with_images)
 
@@ -452,7 +415,6 @@ def transform_recipe(
         body_html=body_html,
         images=images,
         hero_src=hero_src,
-        hero_explicit=hero_explicit,
         warnings=warnings,
         created=str(meta.get("created", "")),
         updated=str(meta.get("updated", "")),

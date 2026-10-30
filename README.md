@@ -46,26 +46,26 @@ The deploy target (`SSH_TARGET`, `DOCROOT`) is read from a gitignored
      H3/H4 stay as sub-headings; known typo `ingredientx` mapped),
    - internal `.md` links / `[[wikilinks]]` → site links if the target is published, else plain text,
    - images resolved from `Cooking/`, `Cooking/img/`, or vault `attachments/` (copied to `build/assets/img/`),
-   - one image becomes the **hero** (top of page, homepage thumbnail, JSON-LD `image`); it is
-     never repeated inline. See [Hero images](#hero-images),
+   - an image captioned `type=FeaturedImage` becomes the **hero** (top of page,
+     homepage thumbnail, JSON-LD `image`), never repeated inline. No other image
+     is used for hero/thumbnail duty — see [Hero images](#hero-images),
    - extracts ingredients + steps for JSON-LD `Recipe` schema.
 3. Jinja2 templates render the pages; `static/css/main.css` + `static/js/site.js`
    provide the clean food-blog look, tag filter, and client-side search.
 
 ## Hero images
 
-An *explicit* hero is chosen in this order of precedence:
+No assumptions: only an image explicitly captioned with
+`type=FeaturedImage` (Obsidian-created, e.g.
+`![type=FeaturedImage|id=123](oven-baked.jpg)`) is used as the hero —
+top-of-page hero block, homepage thumbnail, and JSON-LD `image`. The first
+such image wins and is left out of the body so it never appears twice. All
+other images — marked or not — stay exactly where they are in the recipe.
 
-1. Front matter `hero:` — a filename, path, or `[[wikilink]]` (e.g. `hero: oven-baked.jpg`).
-2. The first image whose caption contains `type=FeaturedImage`
-   (Obsidian-created captions like `![type=FeaturedImage|id=123](oven-baked.jpg)`).
-
-An explicit hero renders once at the top of the recipe (hero block, homepage
-thumbnail, JSON-LD `image`) and is left out of the body, so it never appears
-twice. **Without an explicit marker, images stay exactly where they are in the
-recipe** — nothing is pulled to the top. The first image still doubles as the
-homepage thumbnail and JSON-LD image. Generated caption junk in alt text
-(`type=...`, `|id=...`) is stripped from the rendered `alt`.
+Recipes without a FeaturedImage label get **no hero, no thumbnail, no JSON-LD
+image**: their photos appear inline only, and the homepage shows the
+placeholder tile. Generated caption junk in alt text (`type=...`, `|id=...`)
+is stripped from the rendered `alt`.
 
 ## Adding / editing recipes
 

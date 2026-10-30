@@ -12,7 +12,7 @@
     {% for t in recipe.tags %}<span class="pill">{{ t }}</span>{% endfor %}
   </div>
 
-  {% if recipe.hero_img and recipe.hero_explicit %}
+  {% if recipe.hero_img %}
     <figure class="hero">
       <img src="{{ base_url }}{{ recipe.hero_img }}" alt="{{ recipe.title }}">
     </figure>

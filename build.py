@@ -106,8 +106,9 @@ def main():
         r = transform_recipe(
             raw, filename=f.name, published=published, resolve_image=resolver
         )
-        # Copy images. An explicit hero renders only at the top of the page
-        # (never duplicated inline); unmarked images keep their position.
+        # Copy images. The hero comes ONLY from a FeaturedImage-labelled
+        # image (r.hero_src); recipes without one get no hero, no thumbnail,
+        # no JSON-LD image — never a first-image assumption here.
         hero = f"assets/img/{safe_name(r.hero_src)}" if r.hero_src else None
         for src in r.images:
             sn = safe_name(src)
@@ -116,8 +117,6 @@ def main():
                 shutil.copy2(src, dest)
                 copied.add(sn)
                 total_images += 1
-            if hero is None:
-                hero = f"assets/img/{sn}"
         r.hero_img = hero
 
         if r.warnings:
