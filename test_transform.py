@@ -211,9 +211,11 @@ def test_image_resolved_and_rewritten():
     )
     # r.images holds the decoded on-disk source paths
     assert r.images == ["img/butterchicken above.png"]
-    # a sole image becomes the page hero: not duplicated inline, but reachable
+    # unmarked image stays exactly where it was written; it only serves as the
+    # thumbnail/JSON-LD image (hero_src), never an explicit top-of-page hero
     assert r.hero_src == "img/butterchicken above.png"
-    assert "butterchicken-above" not in r.full_html()
+    assert r.hero_explicit is False
+    assert 'src="/assets/img/butterchicken-above.png"' in r.full_html()
 
 def test_unresolvable_image_dropped():
     raw = fm(**{"stormycooks.com": "true", "title": "Test"}) + """
@@ -257,27 +259,30 @@ def test_featuredimage_marker_is_hero_and_not_duplicated():
     )
     # Hero source is the marked image; both files still get copied.
     assert r.hero_src == "img/butterchicken above.png"
+    assert r.hero_explicit is True
     assert r.images == ["img/butterchicken above.png", "img/ceasar ingredients.png"]
     html = r.full_html()
     # Hero appears only as the page hero, never inline -> no duplicate.
     assert "butterchicken-above" not in html
     assert 'src="/assets/img/ceasar-ingredients.png"' in html
 
-def test_plain_first_image_becomes_hero_kept_off_body():
-    raw = fm(**{"stormycooks.com": "true", "title": "Test"}) + """
-![the chicken](butterchicken%20above.png)
+def test_implicit_first_image_stays_inline():
+    raw = fm(**{"stormycooks.com": "true", "title": "Gran's Basic Meatloaf"}) + """
+![step one](butterchicken%20above.png)
 ![a step](stepshot.png)
 
 ## Ingredients
 - chicken
 """
     r = transform_recipe(
-        raw, filename="Test.md",
+        raw, filename="Gran's Basic Meatloaf.md",
         resolve_image=lambda p: "img/" + urllib.parse.unquote(p),
     )
+    # no marker, no frontmatter hero: images keep their document positions
     assert r.hero_src == "img/butterchicken above.png"
+    assert r.hero_explicit is False
     html = r.full_html()
-    assert "butterchicken-above" not in html
+    assert 'src="/assets/img/butterchicken-above.png"' in html
     assert 'src="/assets/img/stepshot.png"' in html
 
 def test_frontmatter_hero_overrides_marker():
@@ -292,6 +297,7 @@ def test_frontmatter_hero_overrides_marker():
         return "img/" + p if p in ("marked.png", "overhead.png") else None
     r = transform_recipe(raw, filename="Test.md", resolve_image=resolver)
     assert r.hero_src == "img/overhead.png"
+    assert r.hero_explicit is True
     html = r.full_html()
     assert "overhead" not in html  # explicit hero kept off the body
     assert 'src="/assets/img/marked.png"' in html  # marker image stays inline
@@ -322,7 +328,9 @@ def test_frontmatter_hero_unresolved_falls_back_with_warning():
     assert r.warnings
     assert any("hero" in w for w in r.warnings)
     assert r.hero_src == "img/real.png"
-    assert "real.png" not in r.full_html()
+    assert r.hero_explicit is False
+    # unresolved explicit hero falls back to the inline image, which keeps its spot
+    assert 'src="/assets/img/real.png"' in r.full_html()
 
 def test_multiple_featuredimage_markers_first_wins():
     raw = fm(**{"stormycooks.com": "true", "title": "Test"}) + """
@@ -336,6 +344,7 @@ def test_multiple_featuredimage_markers_first_wins():
         return "img/" + p if p in ("first.png", "second.png") else None
     r = transform_recipe(raw, filename="Test.md", resolve_image=resolver)
     assert r.hero_src == "img/first.png"
+    assert r.hero_explicit is True
     html = r.full_html()
     assert "first.png" not in html
     assert 'src="/assets/img/second.png"' in html  # second marker stays inline

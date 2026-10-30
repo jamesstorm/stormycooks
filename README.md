@@ -54,16 +54,18 @@ The deploy target (`SSH_TARGET`, `DOCROOT`) is read from a gitignored
 
 ## Hero images
 
-The hero is chosen in this order of precedence:
+An *explicit* hero is chosen in this order of precedence:
 
 1. Front matter `hero:` — a filename, path, or `[[wikilink]]` (e.g. `hero: oven-baked.jpg`).
 2. The first image whose caption contains `type=FeaturedImage`
    (Obsidian-created captions like `![type=FeaturedImage|id=123](oven-baked.jpg)`).
-3. Otherwise the first image in the document.
 
-The hero renders once at the top of the recipe and is left out of the body, so a
-photo never appears twice. Non-hero images stay inline where they appear. Generated
-caption junk in alt text (`type=...`, `|id=...`) is stripped from the rendered `alt`.
+An explicit hero renders once at the top of the recipe (hero block, homepage
+thumbnail, JSON-LD `image`) and is left out of the body, so it never appears
+twice. **Without an explicit marker, images stay exactly where they are in the
+recipe** — nothing is pulled to the top. The first image still doubles as the
+homepage thumbnail and JSON-LD image. Generated caption junk in alt text
+(`type=...`, `|id=...`) is stripped from the rendered `alt`.
 
 ## Adding / editing recipes
 
