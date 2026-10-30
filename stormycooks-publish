@@ -38,7 +38,10 @@ echo "→ Building site from vault (read-only)..."
 "$VENV_PY" build.py
 
 echo "→ Deploying to $SSH_TARGET ($DOCROOT)..."
+# Clear the docroot contents in place (never rm -rf the dir node itself:
+# the nginx bind mount pins the original inode, so replacing the node makes
+# the container serve an empty dir until restarted).
 tar czf - -C "$SCRIPT_DIR/build" . | ssh -o BatchMode=yes "$SSH_TARGET" \
-  "rm -rf '$DOCROOT' && mkdir -p '$DOCROOT' && tar xzf - -C '$DOCROOT' 2>/dev/null"
+  "mkdir -p '$DOCROOT' && find '$DOCROOT' -mindepth 1 -delete && tar xzf - -C '$DOCROOT' 2>/dev/null"
 
 echo "✓ Deployed. NPM fronts stormycooks.com."
