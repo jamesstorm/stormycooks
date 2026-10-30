@@ -147,32 +147,56 @@ def _rewrite_links(body: str, published: dict, warnings: list) -> str:
     return body
 
 
-def _extract_images(body: str, resolver):
+def _extract_images(body: str, resolver, hero_source=None):
     """Rewrite ![alt](path) to site asset paths.
 
     resolver(abs_or_relative_path) -> absolute source path or None.
-    Returns (new_body, list_of_source_paths_in_order).
+    hero_source: resolved path of the frontmatter-selected hero (or None).
+
+    Exactly one image is the recipe hero: hero_source if given, else the
+    first image marked type=FeaturedImage, else the first image in document
+    order. The hero is still collected for copying (build.py copies
+    r.images) but is suppressed from the inline body so it never appears
+    twice on the page.
+
+    Returns (new_body, source_paths_in_order, hero_source_path_or_None).
     """
     images = []
+    hero = None
+    marked = []
 
     def repl(m):
+        nonlocal hero
         alt, target = m.group(1), m.group(2).strip()
         if re.match(r"^[a-z]+://", target):
             return ""  # external images dropped
+        is_marked = "type=FeaturedImage" in alt
         # Obsidian caption syntax (type=FeaturedImage|id=...) is not a real alt.
-        if "type=" in alt:
+        if "type=" in alt or "|id=" in alt:
             alt = ""
         decoded = urllib.parse.unquote(target)
         src = resolver(decoded)
         if src is None:
             return ""
-        safe = re.sub(r"[^A-Za-z0-9._-]+", "-", os.path.basename(decoded)).strip("-")
+        if is_marked:
+            marked.append(src)
         if src not in images:
             images.append(src)
+        safe = re.sub(r"[^A-Za-z0-9._-]+", "-", os.path.basename(decoded)).strip("-")
+        if hero_source is not None:
+            suppress = src == hero_source
+        elif marked:
+            suppress = src == marked[0]
+        else:
+            suppress = images[0] == src  # first image is the implicit hero
+        if suppress:
+            if hero is None:
+                hero = src
+            return ""
         return f'<img src="/assets/img/{safe}" alt="{escape(alt)}" loading="lazy">'
 
     out = re.sub(r"!\[([^\]]*)\]\(([^)]+)\)", repl, body)
-    return out, images
+    return out, images, hero
 
 
 def _parse_sections(body: str):
@@ -285,6 +309,7 @@ class Recipe:
     sections: dict = field(default_factory=dict)
     body_html: str = ""
     images: list = field(default_factory=list)
+    hero_src: str | None = None
     warnings: list = field(default_factory=list)
     created: str = ""
     updated: str = ""
@@ -340,7 +365,26 @@ def transform_recipe(
     body = _rewrite_links(body, published, warnings)
 
     resolver = resolve_image or (lambda p: None)
-    body_with_images, images = _extract_images(body, resolver)
+
+    # Optional explicit hero (frontmatter `hero:`), plain path or [[wikilink]].
+    # NB: `hero: [[file.png]]` parses as a one-element YAML flow sequence.
+    hero_source = None
+    hero_meta = meta.get("hero")
+    if hero_meta:
+        while isinstance(hero_meta, list) and len(hero_meta) == 1:
+            hero_meta = hero_meta[0]
+        hero_candidate = str(hero_meta).strip()
+        hero_candidate = re.sub(r"^\[\[|\]\]$", "", hero_candidate)
+        hero_source = resolver(urllib.parse.unquote(hero_candidate))
+        if hero_source is None:
+            warnings.append(f"hero image not found: {hero_meta!r}")
+
+    body_with_images, images, hero_src = _extract_images(body, resolver, hero_source)
+    if hero_src is None and hero_source is not None:
+        # Explicit hero but the file appears nowhere inline: still use it.
+        hero_src = hero_source
+        if hero_source not in images:
+            images.append(hero_source)
 
     intro_raw, sections_raw = _parse_sections(body_with_images)
 
@@ -396,6 +440,7 @@ def transform_recipe(
         sections=sections_html,
         body_html=body_html,
         images=images,
+        hero_src=hero_src,
         warnings=warnings,
         created=str(meta.get("created", "")),
         updated=str(meta.get("updated", "")),

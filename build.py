@@ -106,8 +106,9 @@ def main():
         r = transform_recipe(
             raw, filename=f.name, published=published, resolve_image=resolver
         )
-        # Copy images.
-        hero = None
+        # Copy images. The hero (explicit or implied first image) renders only
+        # at the top of the page, so it is never duplicated in the body.
+        hero = f"assets/img/{safe_name(r.hero_src)}" if r.hero_src else None
         for src in r.images:
             sn = safe_name(src)
             dest = out / "assets" / "img" / sn

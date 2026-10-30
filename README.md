@@ -3,7 +3,7 @@
 Builds the public recipe site at **stormycooks.com** from an Obsidian vault.
 
 - **Source:** an Obsidian vault's `Cooking/` folder (path via `config.py` / env) — **strictly read-only**.
-  Only files with `stormycooks.com: true` in the front matter are published (75 recipes).
+  Only files with `stormycooks.com: true` in the front matter are published (56 recipes).
 - **Output:** `build/` — static HTML/CSS/JS.
 - **Live site:** served by an nginx container, HTTPS via Let's Encrypt.
 
@@ -46,9 +46,24 @@ The deploy target (`SSH_TARGET`, `DOCROOT`) is read from a gitignored
      H3/H4 stay as sub-headings; known typo `ingredientx` mapped),
    - internal `.md` links / `[[wikilinks]]` → site links if the target is published, else plain text,
    - images resolved from `Cooking/`, `Cooking/img/`, or vault `attachments/` (copied to `build/assets/img/`),
+   - one image becomes the **hero** (top of page, homepage thumbnail, JSON-LD `image`); it is
+     never repeated inline. See [Hero images](#hero-images),
    - extracts ingredients + steps for JSON-LD `Recipe` schema.
 3. Jinja2 templates render the pages; `static/css/main.css` + `static/js/site.js`
    provide the clean food-blog look, tag filter, and client-side search.
+
+## Hero images
+
+The hero is chosen in this order of precedence:
+
+1. Front matter `hero:` — a filename, path, or `[[wikilink]]` (e.g. `hero: oven-baked.jpg`).
+2. The first image whose caption contains `type=FeaturedImage`
+   (Obsidian-created captions like `![type=FeaturedImage|id=123](oven-baked.jpg)`).
+3. Otherwise the first image in the document.
+
+The hero renders once at the top of the recipe and is left out of the body, so a
+photo never appears twice. Non-hero images stay inline where they appear. Generated
+caption junk in alt text (`type=...`, `|id=...`) is stripped from the rendered `alt`.
 
 ## Adding / editing recipes
 
@@ -63,7 +78,7 @@ The deploy target (`SSH_TARGET`, `DOCROOT`) is read from a gitignored
 | `config.py` | Vault paths, site metadata (name, tagline, owner, email) |
 | `build.py` | Build pipeline entry point |
 | `transform.py` | Markdown → structured recipe (pure, no vault writes) |
-| `test_transform.py` | 25 tests for the transform |
+| `test_transform.py` | 32 tests for the transform |
 | `templates/` | Jinja2 templates (base, index, recipe, about) |
 | `static/` | CSS + JS |
 | `stormycooks-publish` | One-command rebuild + deploy |

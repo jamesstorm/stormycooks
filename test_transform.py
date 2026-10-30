@@ -1,5 +1,6 @@
 """Tests for transform.py — the markdown -> structured recipe pipeline."""
 import re
+import urllib.parse
 
 import pytest
 
@@ -210,7 +211,9 @@ def test_image_resolved_and_rewritten():
     )
     # r.images holds the decoded on-disk source paths
     assert r.images == ["img/butterchicken above.png"]
-    assert 'src="/assets/img/butterchicken-above.png"' in r.full_html()
+    # a sole image becomes the page hero: not duplicated inline, but reachable
+    assert r.hero_src == "img/butterchicken above.png"
+    assert "butterchicken-above" not in r.full_html()
 
 def test_unresolvable_image_dropped():
     raw = fm(**{"stormycooks.com": "true", "title": "Test"}) + """
@@ -236,6 +239,121 @@ def test_external_image_url_dropped():
     r = transform_recipe(raw, filename="General Tso Tofu.md")
     assert r.images == []
     assert "gstatic" not in r.full_html()
+
+
+# ---------------------------------------------------------------- hero images
+
+def test_featuredimage_marker_is_hero_and_not_duplicated():
+    raw = fm(**{"stormycooks.com": "true", "title": "Butter Chicken"}) + """
+![type=FeaturedImage|id=1384](butterchicken%20above.png)
+![step one](ceasar%20ingredients.png)
+
+## Ingredients
+- chicken
+"""
+    r = transform_recipe(
+        raw, filename="Butter Chicken.md",
+        resolve_image=lambda p: "img/" + urllib.parse.unquote(p),
+    )
+    # Hero source is the marked image; both files still get copied.
+    assert r.hero_src == "img/butterchicken above.png"
+    assert r.images == ["img/butterchicken above.png", "img/ceasar ingredients.png"]
+    html = r.full_html()
+    # Hero appears only as the page hero, never inline -> no duplicate.
+    assert "butterchicken-above" not in html
+    assert 'src="/assets/img/ceasar-ingredients.png"' in html
+
+def test_plain_first_image_becomes_hero_kept_off_body():
+    raw = fm(**{"stormycooks.com": "true", "title": "Test"}) + """
+![the chicken](butterchicken%20above.png)
+![a step](stepshot.png)
+
+## Ingredients
+- chicken
+"""
+    r = transform_recipe(
+        raw, filename="Test.md",
+        resolve_image=lambda p: "img/" + urllib.parse.unquote(p),
+    )
+    assert r.hero_src == "img/butterchicken above.png"
+    html = r.full_html()
+    assert "butterchicken-above" not in html
+    assert 'src="/assets/img/stepshot.png"' in html
+
+def test_frontmatter_hero_overrides_marker():
+    raw = fm(**{"stormycooks.com": "true", "title": "Test", "hero": "overhead.png"}) + """
+![type=FeaturedImage](marked.png)
+![overhead](overhead.png)
+
+## Ingredients
+- chicken
+"""
+    def resolver(p):
+        return "img/" + p if p in ("marked.png", "overhead.png") else None
+    r = transform_recipe(raw, filename="Test.md", resolve_image=resolver)
+    assert r.hero_src == "img/overhead.png"
+    html = r.full_html()
+    assert "overhead" not in html  # explicit hero kept off the body
+    assert 'src="/assets/img/marked.png"' in html  # marker image stays inline
+
+def test_frontmatter_hero_wikilink_form():
+    raw = fm(**{"stormycooks.com": "true", "title": "Test", "hero": "[[overhead.png]]"}) + """
+![overhead](overhead.png)
+
+## Ingredients
+- chicken
+"""
+    r = transform_recipe(
+        raw, filename="Test.md",
+        resolve_image=lambda p: "img/" + p,
+    )
+    assert r.hero_src == "img/overhead.png"
+
+def test_frontmatter_hero_unresolved_falls_back_with_warning():
+    raw = fm(**{"stormycooks.com": "true", "title": "Test", "hero": "ghost.png"}) + """
+![real](real.png)
+
+## Ingredients
+- chicken
+"""
+    def resolver(p):
+        return "img/" + p if p == "real.png" else None
+    r = transform_recipe(raw, filename="Test.md", resolve_image=resolver)
+    assert r.warnings
+    assert any("hero" in w for w in r.warnings)
+    assert r.hero_src == "img/real.png"
+    assert "real.png" not in r.full_html()
+
+def test_multiple_featuredimage_markers_first_wins():
+    raw = fm(**{"stormycooks.com": "true", "title": "Test"}) + """
+![type=FeaturedImage](first.png)
+![type=FeaturedImage](second.png)
+
+## Ingredients
+- chicken
+"""
+    def resolver(p):
+        return "img/" + p if p in ("first.png", "second.png") else None
+    r = transform_recipe(raw, filename="Test.md", resolve_image=resolver)
+    assert r.hero_src == "img/first.png"
+    html = r.full_html()
+    assert "first.png" not in html
+    assert 'src="/assets/img/second.png"' in html  # second marker stays inline
+
+def test_generated_alt_caption_junk_blanked():
+    raw = fm(**{"stormycooks.com": "true", "title": "Caesar Dressing"}) + """
+![the hero](ceasar-salad.png)
+![x||id=1333](ceasar-ingredients.png)
+
+## Ingredients
+- anchovy
+"""
+    r = transform_recipe(
+        raw, filename="Caesar Dressing.md",
+        resolve_image=lambda p: "img/" + p,
+    )
+    assert 'src="/assets/img/ceasar-ingredients.png" alt=""' in r.full_html()
+    assert "id=1333" not in r.full_html()
 
 
 # ---------------------------------------------------------------- metadata
