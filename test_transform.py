@@ -195,6 +195,32 @@ def test_wikilink_pipe_alias():
     assert 'href="/recipes/butter-chicken/"' in r.sections["notes"]
     assert "the chicken dish" in r.sections["notes"]
 
+def test_markdown_link_target_with_parentheses():
+    raw = fm(**{"stormycooks.com": "true", "title": "Popcorn"}) + """
+## Ingredients
+- 2-3 Tbsp [Clarified Butter (Ghee)](Clarified%20Butter%20(Ghee).md)
+"""
+    r = transform_recipe(
+        raw, filename="Popcorn.md",
+        published={"Clarified Butter (Ghee)": "clarified-butter-ghee"},
+    )
+    assert 'href="/recipes/clarified-butter-ghee/"' in r.sections["ingredients"]
+    assert "%.md" not in r.sections["ingredients"]
+    assert "Clarified Butter (Ghee).md" not in r.sections["ingredients"]
+
+def test_markdown_link_target_case_variants_resolve():
+    raw = fm(**{"stormycooks.com": "true", "title": "Popcorn"}) + """
+## Ingredients
+- [[Popcorn salt]] and [Popcorn Salt](Popcorn%20Salt.md)
+"""
+    r = transform_recipe(
+        raw, filename="Popcorn.md",
+        published={"Popcorn salt": "popcorn-salt", "Popcorn Salt": "popcorn-salt"},
+    )
+    html = r.sections["ingredients"]
+    assert html.count('href="/recipes/popcorn-salt/"') == 2
+    assert "Popcorn%20Salt.md" not in html
+
 
 # ---------------------------------------------------------------- images
 

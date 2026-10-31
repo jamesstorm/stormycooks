@@ -132,7 +132,10 @@ def _rewrite_links(body: str, published: dict, warnings: list) -> str:
         warnings.append(f"link target not published: {target!r}")
         return text
 
-    body = re.sub(r"\[([^\]]+)\]\(([^)]+\.md)\)", md_link, body)
+    # Tolerate '(' and ')' inside targets — Obsidian filenames like
+    # "Clarified Butter (Ghee).md" are common. Lazy match up to the closing
+    # ".md)" so the whole target is captured.
+    body = re.sub(r"\[([^\]]+)\]\((.*?\.md)\)", md_link, body)
 
     def wiki(m):
         target, alias = m.group(1), m.group(2)
