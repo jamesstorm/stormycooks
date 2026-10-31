@@ -3,7 +3,7 @@
 Builds the public recipe site at **stormycooks.com** from an Obsidian vault.
 
 - **Source:** an Obsidian vault's `Cooking/` folder (path via `config.py` / env) — **strictly read-only**.
-  Only files with `stormycooks.com: true` in the front matter are published (56 recipes).
+  Only files with `stormycooks.com: true` in the front matter are published (68 recipes).
 - **Output:** `build/` — static HTML/CSS/JS.
 - **Live site:** served by an nginx container, HTTPS via Let's Encrypt.
 
