@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}{{ site_name }} — Page not found{% endblock %}
+{% block meta_description %}That page doesn't exist.{% endblock %}
+{% block content %}
+<div class="notfound">
+  <p class="notfound-code">404</p>
+  <h1>That page isn&rsquo;t here</h1>
+  <p>The page you were looking for may have moved, or been unpublished.</p>
+  <p><a class="notfound-home" href="{{ base_url }}">&larr; Back to all recipes</a></p>
+</div>
+{% endblock %}

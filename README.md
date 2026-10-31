@@ -51,7 +51,9 @@ The deploy target (`SSH_TARGET`, `DOCROOT`) is read from a gitignored
      is used for hero/thumbnail duty — see [Hero images](#hero-images),
    - extracts ingredients + steps for JSON-LD `Recipe` schema.
 3. Jinja2 templates render the pages; `static/css/main.css` + `static/js/site.js`
-   provide the clean food-blog look, tag filter, and client-side search.
+   provide the clean food-blog look, tag filter, and client-side search. A themed
+   `404.html` is generated and served by nginx via `error_page 404` (site conf in
+   `deploy/stormycooks-site.conf`).
 
 ## Hero images
 
@@ -81,8 +83,9 @@ is stripped from the rendered `alt`.
 | `build.py` | Build pipeline entry point |
 | `transform.py` | Markdown → structured recipe (pure, no vault writes) |
 | `test_transform.py` | 32 tests for the transform |
-| `templates/` | Jinja2 templates (base, index, recipe, about) |
+| `templates/` | Jinja2 templates (base, index, recipe, about, 404) |
 | `static/` | CSS + JS |
+| `deploy/` | nginx site conf (mounted into the container for the 404 page) |
 | `stormycooks-publish` | One-command rebuild + deploy |
 
 ## Deploy

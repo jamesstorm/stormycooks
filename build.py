@@ -173,6 +173,16 @@ def main():
     )
     (out / "about.html").write_text(ahtml, encoding="utf-8")
 
+    # 404 page (served by nginx via error_page 404 /404.html).
+    e404 = env.get_template("404.html").render(
+        base_url=BASE_URL,
+        site_name=config.SITE_NAME,
+        site_email=config.SITE_EMAIL,
+        site_owner=config.SITE_OWNER,
+        site_year=date.today().year,
+    )
+    (out / "404.html").write_text(e404, encoding="utf-8")
+
     # Static assets.
     shutil.copy2(str(Path(__file__).parent / "static" / "css" / "main.css"), out / "css" / "main.css")
     shutil.copy2(str(Path(__file__).parent / "static" / "js" / "site.js"), out / "js" / "site.js")
