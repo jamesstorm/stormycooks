@@ -82,7 +82,7 @@ is stripped from the rendered `alt`.
 | `config.py` | Vault paths, site metadata (name, tagline, owner, email) |
 | `build.py` | Build pipeline entry point |
 | `transform.py` | Markdown → structured recipe (pure, no vault writes) |
-| `test_transform.py` | 32 tests for the transform |
+| `test_transform.py` | 31 tests for the transform |
 | `templates/` | Jinja2 templates (base, index, recipe, about, 404) |
 | `static/` | CSS + JS |
 | `deploy/` | nginx site conf (mounted into the container for the 404 page) |
