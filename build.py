@@ -97,6 +97,8 @@ def main():
         trim_blocks=True,
         lstrip_blocks=True,
     )
+    env.globals["analytics_script"] = config.ANALYTICS_SCRIPT
+    env.globals["analytics_website_id"] = config.ANALYTICS_WEBSITE_ID
 
     index_items = []
     copied = set()

@@ -23,5 +23,8 @@
     <p>&copy; {{ site_year }} {{ site_owner }} &middot; <a href="mailto:{{ site_email }}">{{ site_email }}</a></p>
   </footer>
   <script src="{{ base_url }}js/site.js" defer></script>
+  {% if analytics_website_id %}
+  <script async src="{{ analytics_script }}" data-website-id="{{ analytics_website_id }}"></script>
+  {% endif %}
 </body>
 </html>

@@ -23,6 +23,16 @@ SITE_OWNER = "James Storm"
 SITE_EMAIL = "james@stormycooks.com"
 SITE_URL = "https://stormycooks.com"
 
+# Umami analytics. ANALYTICS_SCRIPT defaults to the eventual public host; point
+# it at the running instance (LAN) via env or gitignored local_config.py. The
+# website id is a harmless public identifier. Empty ANALYTICS_WEBSITE_ID = off.
+ANALYTICS_SCRIPT = os.environ.get(
+    "STORMYCOOKS_ANALYTICS_SCRIPT", "https://analytics.stormycooks.com/script.js"
+)
+ANALYTICS_WEBSITE_ID = os.environ.get(
+    "STORMYCOOKS_ANALYTICS_WEBSITE_ID", "433d9751-ebdd-4915-af83-ee26bcda3e1b"
+)
+
 # Image file extensions we will copy into the site
 IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
 

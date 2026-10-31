@@ -7,6 +7,15 @@ Builds the public recipe site at **stormycooks.com** from an Obsidian vault.
 - **Output:** `build/` — static HTML/CSS/JS.
 - **Live site:** served by an nginx container, HTTPS via Let's Encrypt.
 
+## Analytics
+
+Optional self-hosted [Umami](https://umami.is/) tracking (no cookies). When enabled,
+every page includes the Umami script (`config.py` → `ANALYTICS_SCRIPT` +
+`ANALYTICS_WEBSITE_ID`). `ANALYTICS_SCRIPT` defaults to the future public host and
+can be overridden per-machine via env (`STORMYCOOKS_ANALYTICS_SCRIPT`) or gitignored
+`local_config.py` — so the LAN address of the analytics instance never lands in this
+public repo. Empty `ANALYTICS_WEBSITE_ID` disables the tag.
+
 ## Commands
 
 ```bash
