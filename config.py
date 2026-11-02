@@ -30,7 +30,8 @@ ANALYTICS_SCRIPT = os.environ.get(
     "STORMYCOOKS_ANALYTICS_SCRIPT", "https://analytics.stormycooks.com/script.js"
 )
 ANALYTICS_WEBSITE_ID = os.environ.get(
-    "STORMYCOOKS_ANALYTICS_WEBSITE_ID", "433d9751-ebdd-4915-af83-ee26bcda3e1b"
+    "STORMYCOOKS_ANALYTICS_WEBSITE_ID",
+    "",  # disabled: analytics now runs server-side via GoAccess on the access log
 )
 
 # Image file extensions we will copy into the site
